@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Alışkanlık Takipçisi</title>
+    <meta name="description" content="Günlük alışkanlıklarını tek dokunuşla işaretle, serini gör." />
+    <meta name="theme-color" content="#f6f8ff" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-head">
+      <div class="site-head__top">
+        <div>
+          <p class="eyebrow" id="today-label"></p>
+          <h1 id="page-title">Bugün ne yaptın?</h1>
+          <p class="summary" id="summary" aria-live="polite"></p>
+        </div>
+        <div class="menu">
+          <button class="menu__toggle" id="menu-toggle" aria-expanded="false" aria-controls="menu-panel">
+            <span class="menu__icon">☰</span>
+            <span>Menü</span>
+          </button>
+          <div class="menu__panel" id="menu-panel" hidden>
+            <div class="menu__section">
+              <p class="menu__title">Tarih</p>
+              <label class="menu__row">
+                <span class="menu__label">Geçmiş günden bak</span>
+                <input id="date-picker" type="date" class="date-picker" />
+              </label>
+              <button id="back-today" class="menu__action" type="button" hidden>Bugüne dön</button>
+            </div>
+            <p class="view-hint" id="view-hint" aria-live="polite"></p>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="app-main">
+      <section class="board" aria-label="Alışkanlık panosu">
+        <div class="board__column">
+          <header class="board__header">
+            <h2>Bekleyen</h2>
+            <p class="board__sub">Henüz tamamlanmamış</p>
+          </header>
+          <ul class="habit-list" id="pending-list" aria-label="Tamamlanmamış alışkanlıklar"></ul>
+          <p class="empty" id="pending-empty" hidden>Tüm alışkanlıklar tamamlandı.</p>
+        </div>
+        <div class="board__divider" aria-hidden="true"></div>
+        <div class="board__column">
+          <header class="board__header">
+            <h2>Tamamlanan</h2>
+            <p class="board__sub">Bugün/Seçili günde tamamlananlar</p>
+          </header>
+          <ul class="habit-list" id="done-list" aria-label="Tamamlanmış alışkanlıklar"></ul>
+          <p class="empty" id="done-empty" hidden>Henüz hiçbiri tamamlanmamış.</p>
+        </div>
+      </section>
+
+      <section class="add-section" aria-label="Yeni alışkanlık ekle">
+        <div class="add-section__header">
+          <h2>Yeni alışkanlık ekle</h2>
+        </div>
+        <div class="emoji-picker" id="emoji-picker" role="radiogroup" aria-label="Emoji seç"></div>
+        <form class="add-form" id="add-form" autocomplete="off">
+          <label class="sr-only" for="habit-name">Yeni alışkanlık adı</label>
+          <input
+            id="habit-name"
+            name="name"
+            placeholder="Yeni alışkanlık (örn. 20 sayfa oku)"
+            maxlength="60"
+            required
+          />
+          <button type="submit">Ekle</button>
+        </form>
+      </section>
+
+      <section class="debug-panel" id="debug-panel" hidden>
+        <details>
+          <summary>Streak testi (debug)</summary>
+          <div class="debug-panel__row">
+            <label>
+              <span class="debug-panel__label">Bugünü şu tarihe ayarla</span>
+              <input id="debug-date" type="date" class="date-picker date-picker--small" />
+            </label>
+            <button id="debug-apply" class="ghost-btn" type="button">Uygula</button>
+            <button id="debug-clear" class="ghost-btn" type="button">Gerçek bugüne dön</button>
+          </div>
+          <p class="debug-panel__help">
+            URL'de <code>?debug=YYYY-MM-DD</code> da kullanabilirsin. Konsoldan <code>__htDebug.set('2026-10-22')</code> çalıştırarak da değiştirebilirsin.
+          </p>
+        </details>
+      </section>
+    </main>
+
+    <footer class="site-foot">
+      Veriler yalnızca bu tarayıcıda saklanır. Sunucu yok.
+    </footer>
+
+    <script type="module" src="js/app.js"></script>
+  </body>
+</html>

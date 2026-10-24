@@ -1,0 +1,11 @@
+{
+  "name": "aliskanlik-takipci",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Günlük alışkanlık takipçisi — MVP",
+  "scripts": {
+    "test": "node --test",
+    "start": "python3 -m http.server 4173"
+  }
+}
