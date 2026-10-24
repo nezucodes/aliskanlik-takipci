@@ -1,7 +1,7 @@
 // Arayüz katmanı: state'i okur, DOM'a yansıtır, olayları store'a iletir.
 // Kural: kullanıcı verisi (alışkanlık adı/not) her zaman textContent ile yazılır → XSS yok.
 
-import { addDays, formatTR, getActiveToday, isDebugToday, isISODate, todayISO } from "./date.js";
+import { addDays, formatTR, getActiveToday, isDebugToday, isISODate, parseISO, todayISO } from "./date.js";
 import { completionRate, computeStreak, longestStreak } from "./streak.js";
 import * as store from "./store.js";
 
@@ -24,6 +24,8 @@ const debugApplyEl = document.querySelector("#debug-apply");
 const debugClearEl = document.querySelector("#debug-clear");
 const menuToggleEl = document.querySelector("#menu-toggle");
 const menuPanelEl = document.querySelector("#menu-panel");
+const weeklyStripEl = document.querySelector("#weekly-strip");
+const heatmapEl = document.querySelector("#heatmap");
 
 const EMOJIS = ["✅", "📚", "🚶", "💻", "🏋️", "💧", "🧘", "🛏️", "🍎", "🎯"];
 let selectedEmoji = null;
@@ -142,6 +144,68 @@ if (debugClearEl) {
   });
 }
 
+function renderWeekly() {
+  if (!weeklyStripEl) return;
+  weeklyStripEl.replaceChildren();
+  const base = getActiveToday();
+  const habits = store.listHabits();
+  const totalHabits = habits.length || 1;
+
+  for (let i = 6; i >= 0; i -= 1) {
+    const date = addDays(base, -i);
+    let done = 0;
+    for (const habit of habits) {
+      if (store.isDone(habit.id, date)) done += 1;
+    }
+    const day = document.createElement("div");
+    day.className = "weekly__day";
+    const label = document.createElement("span");
+    label.className = "weekly__label";
+    const d = new Date(parseISO(date));
+    label.textContent = d.toLocaleDateString("tr-TR", { weekday: "short" });
+    const count = document.createElement("span");
+    count.className = "weekly__count";
+    count.textContent = `${done}/${habits.length}`;
+    day.append(label, count);
+    weeklyStripEl.appendChild(day);
+  }
+}
+
+function renderHeatmap() {
+  if (!heatmapEl) return;
+  heatmapEl.replaceChildren();
+  const base = getActiveToday();
+  const habits = store.listHabits();
+  const days = 91;
+  const cells = [];
+
+  for (let i = days - 1; i >= 0; i -= 1) {
+    const date = addDays(base, -i);
+    let done = 0;
+    for (const habit of habits) {
+      if (store.isDone(habit.id, date)) done += 1;
+    }
+    let level = 0;
+    if (habits.length === 0) level = 0;
+    else {
+      const ratio = done / habits.length;
+      if (ratio === 0) level = 0;
+      else if (ratio < 0.25) level = 1;
+      else if (ratio < 0.5) level = 2;
+      else if (ratio < 0.75) level = 3;
+      else level = 4;
+    }
+    const cell = document.createElement("div");
+    cell.className = "heatmap__cell";
+    cell.dataset.level = String(level);
+    cell.dataset.tooltip = `${formatTR(date)} · ${done}/${habits.length} tamamlandı`;
+    cells.push(cell);
+  }
+  for (const cell of cells) {
+    heatmapEl.appendChild(cell);
+  }
+}
+
 function render() {
   todayLabelEl.textContent = formatTR(getActiveToday());
   if (debugDateEl && !debugDateEl.value && isDebugToday()) {
@@ -174,6 +238,9 @@ function render() {
   summaryEl.textContent = habits.length
     ? `${doneCount}/${habits.length} ${isToday ? "bugün tamamlandı" : "bu tarihte tamamlandı"}`
     : "";
+
+  renderWeekly();
+  renderHeatmap();
 }
 
 function renderHabit(habit, dates, done) {

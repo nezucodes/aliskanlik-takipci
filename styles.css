@@ -195,6 +195,156 @@ h2 {
   gap: 1.2rem;
 }
 
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.stats__card {
+  display: grid;
+  gap: 0.9rem;
+  padding: clamp(0.9rem, 2vw, 1.2rem);
+  border-radius: calc(var(--radius) + 6px);
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, #ffffff 0%, var(--surface-2) 100%);
+  box-shadow: var(--shadow);
+}
+
+.stats__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.stats__sub {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.weekly {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.weekly__day {
+  display: grid;
+  justify-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 0.4rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  text-align: center;
+}
+
+.weekly__label {
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.weekly__count {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.heatmap {
+  display: grid;
+  grid-template-columns: repeat(13, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.heatmap__cell {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: 6px;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  background: color-mix(in srgb, var(--surface) 90%, var(--bg));
+}
+
+.heatmap__cell[data-level="0"] {
+  background: color-mix(in srgb, var(--accent-2) 16%, #ffffff);
+}
+
+.heatmap__cell[data-level="1"] {
+  background: color-mix(in srgb, var(--accent) 26%, #ffffff);
+}
+
+.heatmap__cell[data-level="2"] {
+  background: color-mix(in srgb, var(--accent) 42%, #ffffff);
+}
+
+.heatmap__cell[data-level="3"] {
+  background: color-mix(in srgb, var(--accent) 58%, #ffffff);
+}
+
+.heatmap__cell[data-level="4"] {
+  background: color-mix(in srgb, var(--accent) 78%, #ffffff);
+}
+
+.heatmap__cell:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.35rem 0.5rem;
+  border-radius: 8px;
+  background: var(--text);
+  color: #ffffff;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.heatmap__legend {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.heatmap__swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+
+.heatmap__swatch--0 {
+  background: color-mix(in srgb, var(--accent-2) 16%, #ffffff);
+}
+
+.heatmap__swatch--1 {
+  background: color-mix(in srgb, var(--accent) 26%, #ffffff);
+}
+
+.heatmap__swatch--2 {
+  background: color-mix(in srgb, var(--accent) 42%, #ffffff);
+}
+
+.heatmap__swatch--3 {
+  background: color-mix(in srgb, var(--accent) 58%, #ffffff);
+}
+
+.heatmap__swatch--4 {
+  background: color-mix(in srgb, var(--accent) 78%, #ffffff);
+}
+
+.heatmap__hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
 .board {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

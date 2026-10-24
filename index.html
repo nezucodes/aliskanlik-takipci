@@ -37,6 +37,37 @@
     </header>
 
     <main class="app-main">
+      <section class="stats" aria-label="İstatistikler">
+        <div class="stats__card">
+          <header class="stats__header">
+            <div>
+              <h2>Haftalık görünüm</h2>
+              <p class="stats__sub">Son 7 gün · tamamlanan / toplam</p>
+            </div>
+          </header>
+          <div class="weekly" id="weekly-strip" aria-label="Son 7 günlük özet"></div>
+        </div>
+        <div class="stats__card">
+          <header class="stats__header">
+            <div>
+              <h2>Isı haritası</h2>
+              <p class="stats__sub">Son 90 gün · ne kadar çok tamamladıysan o kadar koyu</p>
+            </div>
+            <div class="heatmap__legend" aria-label="Renk skalası">
+              <span>Az</span>
+              <span class="heatmap__swatch heatmap__swatch--0"></span>
+              <span class="heatmap__swatch heatmap__swatch--1"></span>
+              <span class="heatmap__swatch heatmap__swatch--2"></span>
+              <span class="heatmap__swatch heatmap__swatch--3"></span>
+              <span class="heatmap__swatch heatmap__swatch--4"></span>
+              <span>Çok</span>
+            </div>
+          </header>
+          <div class="heatmap" id="heatmap" aria-label="Son 90 günlük ısı haritası"></div>
+          <p class="heatmap__hint">Karelerin üstüne gelince (veya dokununca) tarihi görebilirsin.</p>
+        </div>
+      </section>
+
       <section class="board" aria-label="Alışkanlık panosu">
         <div class="board__column">
           <header class="board__header">
