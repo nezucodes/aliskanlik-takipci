@@ -36,6 +36,13 @@
       </div>
     </header>
 
+    <div class="app-error" id="app-error" role="alert" hidden>
+      <p class="app-error__text" id="app-error-text"></p>
+      <button class="app-error__close" id="app-error-close" type="button" aria-label="Hatayı kapat">
+        ×
+      </button>
+    </div>
+
     <main class="app-main">
       <section class="insights" aria-label="Özet istatistikler">
         <article class="insight">
@@ -156,7 +163,7 @@
     </main>
 
     <footer class="site-foot">
-      Veriler yalnızca bu tarayıcıda saklanır. Sunucu yok.
+      Veriler bu cihazdaki SQLite veritabanında saklanır · <code>npm run server</code>
     </footer>
 
     <script type="module" src="js/app.js"></script>

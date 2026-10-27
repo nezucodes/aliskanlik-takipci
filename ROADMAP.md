@@ -11,7 +11,7 @@
 | 0 · MVP (CRUD + streak + testler) | ✅ bitti |
 | 1 · Analitik (haftalık görünüm + ısı haritası) | ✅ bitti |
 | 2 · İstatistik paneli + düzenleme | ✅ bitti |
-| 3 · Kendi API + SQLite | ⬜ |
+| 3 · Kendi API + SQLite | ✅ bitti |
 | 4 · PWA + tema + yedekleme | ⬜ |
 | 5 · Yayın (deploy) | ⬜ |
 | 6 · iOS (SwiftUI) portu | ⬜ opsiyonel |
@@ -38,12 +38,14 @@
 ## Aşama 3 — Kendi API + SQLite (1-2 hafta)
 
 **Yapılacaklar**
-- [ ] `server/` klasörü: Node + Express (veya Fastify)
-- [ ] SQLite şeması: `habits`, `entries`
-- [ ] REST endpoint'leri: GET/POST/PATCH/DELETE + `PUT /entries/:habitId/:date`
-- [ ] Girdi doğrulama, anlamlı HTTP durum kodları
-- [ ] `store.js` → `apiStore.js`: **aynı fonksiyon isimleri**, içi `fetch`
-- [ ] Arayüzde tek satır değişmeden geçiş (repository pattern kanıtı)
+- [x] `server/` klasörü: Node + Express
+- [x] SQLite şeması: `habits`, `entries` (Node yerleşik `node:sqlite`)
+- [x] REST endpoint'leri: GET/POST/PATCH/DELETE + `PUT /entries/:habitId/:date`
+- [x] Girdi doğrulama, anlamlı HTTP durum kodları
+- [x] `store.js` → `apiStore.js`: **aynı fonksiyon isimleri**, içi `fetch`
+- [x] Arayüzde minimum değişiklikle geçiş (repository pattern kanıtı)
+- [x] localStorage → SQLite tek seferlik veri taşıma (`POST /api/import`)
+- [x] API entegrasyon testleri (fetch ile gerçek HTTP)
 
 **Kazanım**
 - HTTP'nin gerçek anlamı: metot, durum kodu, gövde, idempotency

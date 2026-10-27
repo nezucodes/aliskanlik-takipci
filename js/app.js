@@ -1,10 +1,12 @@
 // Arayüz katmanı: state'i okur, DOM'a yansıtır, olayları store'a iletir.
 // Kural: kullanıcı verisi (alışkanlık adı/not) her zaman textContent ile yazılır → XSS yok.
+// Aşama 3: veri kaynağı localStorage değil, kendi API'miz. Okuma senkron (snapshot),
+// yazma asenkron (fetch). Bu dosyada tek satırlık fark: import + mutate() sarmalı.
 
 import { addDays, formatTR, getActiveToday, isDebugToday, isISODate, parseISO, todayISO } from "./date.js";
 import { completionRate, computeStreak, longestStreak } from "./streak.js";
 import { buildSummary } from "./stats.js";
-import * as store from "./store.js";
+import * as store from "./apiStore.js";
 
 const pendingListEl = document.querySelector("#pending-list");
 const doneListEl = document.querySelector("#done-list");
@@ -36,6 +38,9 @@ const statDaysEl = document.querySelector("#stat-days");
 const statBestEl = document.querySelector("#stat-best");
 const statMonthEl = document.querySelector("#stat-month");
 const statMonthSubEl = document.querySelector("#stat-month-sub");
+const appErrorEl = document.querySelector("#app-error");
+const appErrorTextEl = document.querySelector("#app-error-text");
+const appErrorCloseEl = document.querySelector("#app-error-close");
 
 const EMOJIS = ["✅", "📚", "🚶", "💻", "🏋️", "💧", "🧘", "🛏️", "🍎", "🎯"];
 const PALETTE = ["#7c8bff", "#8fd3c7", "#f7b7a3", "#e6a8d7", "#f2d098", "#9ec5fe"];
@@ -47,6 +52,32 @@ let viewDate = getActiveToday();
 
 if (isDebugToday() || (typeof location !== "undefined" && location.hostname === "localhost")) {
   if (debugPanelEl) debugPanelEl.hidden = false;
+}
+
+function showError(error) {
+  if (!appErrorEl || !appErrorTextEl) return;
+  appErrorTextEl.textContent = error?.message ?? String(error);
+  appErrorEl.hidden = false;
+}
+
+function clearError() {
+  if (appErrorEl) appErrorEl.hidden = true;
+}
+
+/**
+ * Yazma işlemleri için ortak sarmal:
+ * dene → başarılıysa temizle + yeniden çiz; hata varsa kullanıcıya göster.
+ * Ağ hatasında arayüz eski (doğru) veriyi göstermeye devam eder.
+ */
+async function mutate(action) {
+  try {
+    await action();
+    clearError();
+    render();
+  } catch (error) {
+    console.error(error);
+    showError(error);
+  }
 }
 
 function updateEmojiSelection() {
@@ -196,7 +227,6 @@ function renderWeekly() {
   weeklyStripEl.replaceChildren();
   const base = getActiveToday();
   const habits = store.listHabits();
-  const totalHabits = habits.length || 1;
 
   for (let i = 6; i >= 0; i -= 1) {
     const date = addDays(base, -i);
@@ -286,8 +316,7 @@ function renderArchive() {
     restore.className = "restore-btn";
     restore.textContent = "Geri getir";
     restore.addEventListener("click", () => {
-      store.restoreHabit(habit.id);
-      render();
+      void mutate(() => store.restoreHabit(habit.id));
     });
 
     item.append(name, restore);
@@ -342,9 +371,10 @@ function renderEditForm(habit) {
     event.preventDefault();
     const name = input.value.trim();
     if (!name) return;
-    store.updateHabit(habit.id, { name, color: chosenColor });
-    editingId = null;
-    render();
+    void mutate(async () => {
+      await store.updateHabit(habit.id, { name, color: chosenColor });
+      editingId = null;
+    });
   });
 
   actions.append(cancel, save);
@@ -407,8 +437,7 @@ function renderHabit(habit, dates, done) {
     `${habit.name}: ${done ? "tamamlandı, geri al" : "tamamlandı olarak işaretle"}`,
   );
   toggle.addEventListener("click", () => {
-    store.setEntry(habit.id, viewDate, !done);
-    render();
+    void mutate(() => store.setEntry(habit.id, viewDate, !done));
   });
 
   const body = document.createElement("div");
@@ -464,12 +493,7 @@ function renderHabit(habit, dates, done) {
   });
 
   noteSave.addEventListener("click", () => {
-    store.setNote(habit.id, viewDate, noteArea.value);
-    const updated = store.getEntry(habit.id, viewDate);
-    notePreview.textContent = updated?.note || "";
-    notePreview.hidden = !(updated?.note && updated.note.trim().length > 0);
-    noteToggle.textContent = updated?.note && updated.note.trim() ? "Notu düzenle" : "Not ekle";
-    notePanel.hidden = true;
+    void mutate(() => store.setNote(habit.id, viewDate, noteArea.value));
   });
 
   noteToggle.addEventListener("click", () => {
@@ -517,9 +541,10 @@ function renderHabit(habit, dates, done) {
   remove.setAttribute("aria-label", `${habit.name} alışkanlığını sil`);
   remove.addEventListener("click", () => {
     if (confirm(`"${habit.name}" silinsin mi? Geçmiş kayıtlar arşivde kalır.`)) {
-      store.deleteHabit(habit.id);
-      editingId = null;
-      render();
+      void mutate(async () => {
+        await store.deleteHabit(habit.id);
+        editingId = null;
+      });
     }
   });
 
@@ -533,17 +558,46 @@ formEl.addEventListener("submit", (event) => {
   const name = inputEl.value.trim();
   if (!name) return;
 
-  store.createHabit({ name, emoji: selectedEmoji || "✅", color: selectedColor });
-  inputEl.value = "";
-  selectedEmoji = null;
-  updateEmojiSelection();
-  inputEl.focus();
-  render();
+  void (async () => {
+    try {
+      await store.createHabit({ name, emoji: selectedEmoji || "✅", color: selectedColor });
+      clearError();
+      inputEl.value = "";
+      selectedEmoji = null;
+      updateEmojiSelection();
+      inputEl.focus();
+      render();
+    } catch (error) {
+      console.error(error);
+      showError(error);
+    }
+  })();
 });
 
 initEmojiPicker();
 initColorPicker();
-store.seedIfEmpty();
-viewDate = getActiveToday();
-if (datePickerEl) datePickerEl.value = viewDate;
-setViewDate(viewDate);
+
+if (appErrorCloseEl) {
+  appErrorCloseEl.addEventListener("click", clearError);
+}
+
+/**
+ * Açılış: sunucudan snapshot'ı çek, gerekirse örnek veriyi ekle, sonra çiz.
+ * İlk render'ı yükleme bitene kadar yapmıyoruz ki boş ekran yanıp sönmesin.
+ */
+async function start() {
+  try {
+    await store.loadState();
+    await store.seedIfEmpty();
+    clearError();
+  } catch (error) {
+    console.error(error);
+    showError(error);
+  }
+
+  viewDate = getActiveToday();
+  if (datePickerEl) datePickerEl.value = viewDate;
+  setViewDate(viewDate);
+}
+
+void start();

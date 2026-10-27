@@ -195,6 +195,46 @@ h2 {
   gap: 1.2rem;
 }
 
+/* Hata bildirimi: sunucu kapalıysa sessizce boş ekran göstermeyelim. */
+.app-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
+  background: color-mix(in srgb, var(--danger) 10%, #ffffff);
+  color: color-mix(in srgb, var(--danger) 75%, #000000);
+}
+
+.app-error[hidden] {
+  display: none;
+}
+
+.app-error__text {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.app-error__close {
+  flex: none;
+  width: 1.8rem;
+  height: 1.8rem;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.app-error__close:hover,
+.app-error__close:focus-visible {
+  background: color-mix(in srgb, var(--danger) 16%, transparent);
+}
+
 .insights {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

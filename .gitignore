@@ -1,0 +1,14 @@
+# Bağımlılıklar
+node_modules/
+
+# Yerel veritabanı (kullanıcıya ait veri — repoya girmez)
+server/data/
+*.db
+*.db-wal
+*.db-shm
+
+# macOS
+.DS_Store
+
+# Loglar
+*.log

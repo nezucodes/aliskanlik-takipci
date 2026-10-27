@@ -1,5 +1,7 @@
-// Veri katmanı — "repository" sözleşmesi.
-// Hafta 1: localStorage. Hafta 2: aynı fonksiyonlar fetch ile API'ye gidecek.
+// Veri katmanı — "repository" sözleşmesi (localStorage sürümü).
+// Aşama 3'ten itibaren uygulama js/apiStore.js kullanıyor; bu dosya sözleşmenin
+// referansı olarak duruyor: aynı fonksiyon isimleri, aynı davranış, farklı depo.
+// Hafta 1: localStorage. Hafta 2: fetch ile API.
 // Arayüz (app.js) bu dosyanın nasıl çalıştığını bilmez, sadece sözleşmeyi bilir.
 // Geriye dönük uyumlu: eski entry'lerde note eksikse boş string olarak dönülür.
 
