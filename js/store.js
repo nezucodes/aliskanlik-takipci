@@ -88,6 +88,46 @@ export function deleteHabit(id) {
   write(db);
 }
 
+/** İsim / emoji / renk güncelle. Sadece verilen alanlar değişir. */
+export function updateHabit(id, patch = {}) {
+  const db = read();
+  const habit = db.habits.find((item) => item && item.id === id);
+  if (!habit) throw new Error("Alışkanlık bulunamadı");
+
+  if (patch.name !== undefined) {
+    const clean = String(patch.name ?? "").trim().slice(0, 60);
+    if (!clean) throw new Error("Alışkanlık adı boş olamaz");
+    habit.name = clean;
+  }
+  if (patch.emoji !== undefined) habit.emoji = String(patch.emoji ?? "✅").slice(0, 4);
+  if (patch.color !== undefined) habit.color = String(patch.color);
+
+  write(db);
+  return habit;
+}
+
+/** Arşivlenmiş (silinmiş) alışkanlıklar. */
+export function listArchivedHabits() {
+  return read()
+    .habits.filter((habit) => habit && habit.archivedAt)
+    .sort((a, b) => b.archivedAt.localeCompare(a.archivedAt));
+}
+
+/** Arşivden geri getir. */
+export function restoreHabit(id) {
+  const db = read();
+  const habit = db.habits.find((item) => item && item.id === id);
+  if (!habit) return null;
+  habit.archivedAt = null;
+  write(db);
+  return habit;
+}
+
+/** Tüm tamamlanmış kayıtlar (özet istatistikler için). */
+export function listEntries() {
+  return read().entries.filter((entry) => entry && entry.done);
+}
+
 /** Bir günü işaretle / işareti kaldır. Idempotent: aynı istek iki kez güvenli. */
 export function setEntry(habitId, date, done) {
   const db = read();

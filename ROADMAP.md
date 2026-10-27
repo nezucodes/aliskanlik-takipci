@@ -10,7 +10,7 @@
 |---|---|
 | 0 · MVP (CRUD + streak + testler) | ✅ bitti |
 | 1 · Analitik (haftalık görünüm + ısı haritası) | ✅ bitti |
-| 2 · İstatistik paneli + düzenleme | ⬜ sırada |
+| 2 · İstatistik paneli + düzenleme | ✅ bitti |
 | 3 · Kendi API + SQLite | ⬜ |
 | 4 · PWA + tema + yedekleme | ⬜ |
 | 5 · Yayın (deploy) | ⬜ |
@@ -21,11 +21,11 @@
 ## Aşama 2 — İstatistik paneli + düzenleme (3-4 gün)
 
 **Yapılacaklar**
-- [ ] Özet kartları: toplam tamamlama, en uzun seri, bu ayki oran, aktif gün sayısı
-- [ ] Alışkanlığı yeniden adlandırma (çift tık veya kalem butonu)
-- [ ] Renk seçimi (pastel palet)
-- [ ] Arşivlenenleri görme + geri getirme (soft delete'in karşılığı)
-- [ ] Boş durumlar ve küçük geçiş animasyonları
+- [x] Özet kartları: toplam tamamlama, en uzun seri, bu ayki oran, aktif gün sayısı
+- [x] Alışkanlığı yeniden adlandırma (kalem butonu)
+- [x] Renk seçimi (pastel palet)
+- [x] Arşivlenenleri görme + geri getirme (soft delete'in karşılığı)
+- [x] Boş durumlar
 
 **Kazanım**
 - Türetilmiş veri (aggregate) mantığı: aynı veriden 5 farklı özet

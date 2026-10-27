@@ -3,6 +3,7 @@
 
 import { addDays, formatTR, getActiveToday, isDebugToday, isISODate, parseISO, todayISO } from "./date.js";
 import { completionRate, computeStreak, longestStreak } from "./streak.js";
+import { buildSummary } from "./stats.js";
 import * as store from "./store.js";
 
 const pendingListEl = document.querySelector("#pending-list");
@@ -26,10 +27,22 @@ const menuToggleEl = document.querySelector("#menu-toggle");
 const menuPanelEl = document.querySelector("#menu-panel");
 const weeklyStripEl = document.querySelector("#weekly-strip");
 const heatmapEl = document.querySelector("#heatmap");
+const colorPickerEl = document.querySelector("#color-picker");
+const archiveSectionEl = document.querySelector("#archive-section");
+const archiveListEl = document.querySelector("#archive-list");
+const archiveCountEl = document.querySelector("#archive-count");
+const statTotalEl = document.querySelector("#stat-total");
+const statDaysEl = document.querySelector("#stat-days");
+const statBestEl = document.querySelector("#stat-best");
+const statMonthEl = document.querySelector("#stat-month");
+const statMonthSubEl = document.querySelector("#stat-month-sub");
 
 const EMOJIS = ["✅", "📚", "🚶", "💻", "🏋️", "💧", "🧘", "🛏️", "🍎", "🎯"];
-let selectedEmoji = null;
+const PALETTE = ["#7c8bff", "#8fd3c7", "#f7b7a3", "#e6a8d7", "#f2d098", "#9ec5fe"];
 
+let selectedEmoji = null;
+let selectedColor = PALETTE[0];
+let editingId = null;
 let viewDate = getActiveToday();
 
 if (isDebugToday() || (typeof location !== "undefined" && location.hostname === "localhost")) {
@@ -61,6 +74,40 @@ function initEmojiPicker() {
     });
     emojiPickerEl.appendChild(btn);
   }
+}
+
+function updateColorSelection() {
+  if (!colorPickerEl) return;
+  for (const child of colorPickerEl.children) {
+    child.setAttribute("aria-pressed", String(child.dataset.color === selectedColor));
+  }
+}
+
+function makeColorButton(color, onPick) {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "color-btn";
+  btn.dataset.color = color;
+  btn.style.setProperty("--swatch", color);
+  btn.setAttribute("aria-label", `Renk ${color}`);
+  btn.setAttribute("aria-pressed", "false");
+  btn.addEventListener("click", () => onPick(color));
+  return btn;
+}
+
+function initColorPicker() {
+  if (!colorPickerEl) return;
+  colorPickerEl.replaceChildren();
+  selectedColor = PALETTE[0];
+  for (const color of PALETTE) {
+    colorPickerEl.appendChild(
+      makeColorButton(color, (picked) => {
+        selectedColor = picked;
+        updateColorSelection();
+      }),
+    );
+  }
+  updateColorSelection();
 }
 
 if (menuToggleEl && menuPanelEl) {
@@ -206,6 +253,105 @@ function renderHeatmap() {
   }
 }
 
+function renderInsights() {
+  const habits = store.listHabits();
+  const summary = buildSummary(habits, store.listEntries(), getActiveToday());
+
+  if (statTotalEl) statTotalEl.textContent = String(summary.total);
+  if (statDaysEl) statDaysEl.textContent = String(summary.activeDays);
+  if (statBestEl) statBestEl.textContent = String(summary.bestStreak);
+  if (statMonthEl) statMonthEl.textContent = `%${Math.round(summary.monthRate * 100)}`;
+  if (statMonthSubEl) {
+    statMonthSubEl.textContent = `${summary.monthDone}/${summary.monthPossible}`;
+  }
+}
+
+function renderArchive() {
+  if (!archiveSectionEl || !archiveListEl) return;
+  const archived = store.listArchivedHabits();
+  archiveSectionEl.hidden = archived.length === 0;
+  if (archiveCountEl) archiveCountEl.textContent = `(${archived.length})`;
+  archiveListEl.replaceChildren();
+
+  for (const habit of archived) {
+    const item = document.createElement("li");
+    item.className = "archive-item";
+
+    const name = document.createElement("p");
+    name.className = "archive-item__name";
+    name.textContent = `${habit.emoji || "✅"} ${habit.name}`;
+
+    const restore = document.createElement("button");
+    restore.type = "button";
+    restore.className = "restore-btn";
+    restore.textContent = "Geri getir";
+    restore.addEventListener("click", () => {
+      store.restoreHabit(habit.id);
+      render();
+    });
+
+    item.append(name, restore);
+    archiveListEl.appendChild(item);
+  }
+}
+
+function renderEditForm(habit) {
+  const form = document.createElement("form");
+  form.className = "edit-form";
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.value = habit.name;
+  input.maxLength = 60;
+  input.required = true;
+  input.setAttribute("aria-label", "Alışkanlık adı");
+
+  let chosenColor = habit.color;
+
+  const colors = document.createElement("div");
+  colors.className = "edit-colors";
+  for (const color of PALETTE) {
+    const btn = makeColorButton(color, (picked) => {
+      chosenColor = picked;
+      for (const child of colors.children) {
+        child.setAttribute("aria-pressed", String(child.dataset.color === chosenColor));
+      }
+    });
+    btn.setAttribute("aria-pressed", String(color === chosenColor));
+    colors.appendChild(btn);
+  }
+
+  const actions = document.createElement("div");
+  actions.className = "edit-actions";
+
+  const cancel = document.createElement("button");
+  cancel.type = "button";
+  cancel.className = "mini-cancel";
+  cancel.textContent = "İptal";
+  cancel.addEventListener("click", () => {
+    editingId = null;
+    render();
+  });
+
+  const save = document.createElement("button");
+  save.type = "submit";
+  save.className = "mini-save";
+  save.textContent = "Kaydet";
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const name = input.value.trim();
+    if (!name) return;
+    store.updateHabit(habit.id, { name, color: chosenColor });
+    editingId = null;
+    render();
+  });
+
+  actions.append(cancel, save);
+  form.append(input, colors, actions);
+  return form;
+}
+
 function render() {
   todayLabelEl.textContent = formatTR(getActiveToday());
   if (debugDateEl && !debugDateEl.value && isDebugToday()) {
@@ -239,8 +385,10 @@ function render() {
     ? `${doneCount}/${habits.length} ${isToday ? "bugün tamamlandı" : "bu tarihte tamamlandı"}`
     : "";
 
+  renderInsights();
   renderWeekly();
   renderHeatmap();
+  renderArchive();
 }
 
 function renderHabit(habit, dates, done) {
@@ -342,21 +490,41 @@ function renderHabit(habit, dates, done) {
   notePreview.hidden = !(entry?.note && entry.note.trim().length > 0);
 
   noteBlock.append(noteToggle, notePanel, notePreview);
-  body.append(name, done ? meta : document.createElement("div"), noteBlock);
+
+  if (editingId === habit.id) {
+    body.append(renderEditForm(habit));
+  } else {
+    body.append(name, done ? document.createElement("div") : meta, noteBlock);
+  }
+
+  const actions = document.createElement("div");
+  actions.className = "habit-actions";
+
+  const edit = document.createElement("button");
+  edit.type = "button";
+  edit.className = "icon-btn";
+  edit.textContent = "✎";
+  edit.setAttribute("aria-label", `${habit.name} alışkanlığını düzenle`);
+  edit.addEventListener("click", () => {
+    editingId = editingId === habit.id ? null : habit.id;
+    render();
+  });
 
   const remove = document.createElement("button");
   remove.type = "button";
-  remove.className = "remove";
+  remove.className = "icon-btn icon-btn--danger";
   remove.textContent = "×";
   remove.setAttribute("aria-label", `${habit.name} alışkanlığını sil`);
   remove.addEventListener("click", () => {
     if (confirm(`"${habit.name}" silinsin mi? Geçmiş kayıtlar arşivde kalır.`)) {
       store.deleteHabit(habit.id);
+      editingId = null;
       render();
     }
   });
 
-  item.append(toggle, body, remove);
+  actions.append(edit, remove);
+  item.append(toggle, body, actions);
   return item;
 }
 
@@ -365,7 +533,7 @@ formEl.addEventListener("submit", (event) => {
   const name = inputEl.value.trim();
   if (!name) return;
 
-  store.createHabit({ name, emoji: selectedEmoji || "✅" });
+  store.createHabit({ name, emoji: selectedEmoji || "✅", color: selectedColor });
   inputEl.value = "";
   selectedEmoji = null;
   updateEmojiSelection();
@@ -374,6 +542,7 @@ formEl.addEventListener("submit", (event) => {
 });
 
 initEmojiPicker();
+initColorPicker();
 store.seedIfEmpty();
 viewDate = getActiveToday();
 if (datePickerEl) datePickerEl.value = viewDate;
