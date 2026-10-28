@@ -160,9 +160,16 @@ function renderIcon(size, { rounded = true, scale = 1 } = {}) {
 mkdirSync(outDir, { recursive: true });
 
 const outputs = [
+  // Sekme ikonu: küçük boyutta yuvarlak köşe daha okunaklı.
   { file: "favicon-32.png", size: 32, rounded: true, scale: 1 },
-  { file: "icon-192.png", size: 192, rounded: true, scale: 1 },
-  { file: "icon-512.png", size: 512, rounded: true, scale: 1 },
+  // Uygulama ikonları: TAM DOLU (köşe yuvarlatması yok).
+  // Neden? macOS/iOS/Android ikonu kendi maskeleriyle yuvarlıyor.
+  // Biz de yuvarlarsak "çift maske" olur ve platform ikonu büyütüp kırpar;
+  // tik olduğundan büyük ve kenara yakın görünür.
+  { file: "icon-192.png", size: 192, rounded: false, scale: 0.86 },
+  { file: "icon-512.png", size: 512, rounded: false, scale: 0.86 },
+  // Retina Dock/Launchpad 1024 px'e kadar kaynak ister; yoksa 512'yi büyütüp bulanıklaştırır.
+  { file: "icon-1024.png", size: 1024, rounded: false, scale: 0.86 },
   // Maskable: platform kendi maskesini uygular → tam dolu zemin + güvenli alan.
   { file: "icon-maskable-512.png", size: 512, rounded: false, scale: 0.78 },
   // iOS kendi köşe maskesini uygular → tam dolu zemin.

@@ -8,7 +8,7 @@
 // API istekleri (/api/...) ASLA önbelleklenmez: kullanıcı verisi bayat olmamalı.
 // Veri için sunucu gerekir; uygulama bunu ekranda açıkça söyler.
 
-const VERSION = "v2";
+const VERSION = "v3";
 const CACHE = `ht-shell-${VERSION}`;
 
 const PRECACHE = [
