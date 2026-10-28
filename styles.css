@@ -10,9 +10,41 @@
   --accent-2: #b9c0ff;
   --success: #7aa87a;
   --danger: #d98b8b;
+  /* Pastel karışımların tabanı (tema ile değişir). */
+  --tint: #ffffff;
+  /* Renkli zemin üstündeki yazı. */
+  --on-accent: #ffffff;
+  --on-text: #ffffff;
+  /* Isı haritasında "hiç kayıt yok" rengi: koyu temada kart zemininden
+     daha koyu olmalı, yoksa boş gün ile 1 kayıtlı gün karışıyor. */
+  --heat-0: #eef1fb;
+  --danger-ink: color-mix(in srgb, var(--danger) 75%, #000000);
   --radius: 16px;
   --shadow: 0 1px 1px rgb(31 36 48 / 4%), 0 10px 30px rgb(124 139 255 / 8%);
   color-scheme: light;
+}
+
+/* Koyu tema: aynı değişken isimleri, farklı değerler.
+   Bileşenlerde sabit renk bırakmadığımız için tema değişimi "bedava":
+   tek bir attribute değişiyor, tüm sayfa yeniden renkleniyor. */
+:root[data-theme="dark"] {
+  --bg: #10131c;
+  --surface: #191d29;
+  --surface-2: #212636;
+  --text: #eef1fb;
+  --muted: #a7b0ca;
+  --border: #313849;
+  --accent: #8b97ff;
+  --accent-2: #5b648f;
+  --success: #86c58a;
+  --danger: #e79b9b;
+  --tint: #1b1f2c;
+  --on-accent: #12151e;
+  --on-text: #12151e;
+  --heat-0: #161a26;
+  --danger-ink: color-mix(in srgb, var(--danger) 82%, #ffffff);
+  --shadow: 0 1px 1px rgb(0 0 0 / 35%), 0 10px 30px rgb(0 0 0 / 28%);
+  color-scheme: dark;
 }
 
 *,
@@ -28,7 +60,7 @@ body {
   font-size: clamp(1rem, 0.95rem + 0.25vw, 1.0625rem);
   line-height: 1.6;
   color: var(--text);
-  background: radial-gradient(circle at top, #ffffff 0%, var(--bg) 55%);
+  background: radial-gradient(circle at top, var(--surface) 0%, var(--bg) 55%);
   min-height: 100dvh;
 }
 
@@ -157,6 +189,45 @@ h2 {
   color: var(--text);
 }
 
+.menu__action--file {
+  display: inline-block;
+}
+
+.menu__status {
+  margin: 0;
+  min-height: 1em;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* Tema seçici: üç durumlu segment kontrol */
+.theme-switch {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.25rem;
+  padding: 0.2rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-2);
+}
+
+.theme-switch button {
+  padding: 0.35rem 0.4rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.theme-switch button[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 10%);
+}
+
 .date-picker {
   font: inherit;
   color: inherit;
@@ -208,8 +279,8 @@ h2 {
   padding: 0.75rem 1rem;
   border-radius: var(--radius);
   border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
-  background: color-mix(in srgb, var(--danger) 10%, #ffffff);
-  color: color-mix(in srgb, var(--danger) 75%, #000000);
+  background: color-mix(in srgb, var(--danger) 10%, var(--tint));
+  color: var(--danger-ink);
 }
 
 .app-error[hidden] {
@@ -312,7 +383,7 @@ h2 {
   padding: clamp(0.9rem, 2vw, 1.2rem);
   border-radius: calc(var(--radius) + 6px);
   border: 1px solid var(--border);
-  background: linear-gradient(180deg, #ffffff 0%, var(--surface-2) 100%);
+  background: linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
   box-shadow: var(--shadow);
 }
 
@@ -361,10 +432,10 @@ h2 {
   height: var(--fill, 0%);
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--accent) 30%, #ffffff) 0%,
-    color-mix(in srgb, var(--accent) 55%, #ffffff) 100%
+    color-mix(in srgb, var(--accent) 30%, var(--tint)) 0%,
+    color-mix(in srgb, var(--accent) 55%, var(--tint)) 100%
   );
-  border-top: 2px solid color-mix(in srgb, var(--accent) 65%, #ffffff);
+  border-top: 2px solid color-mix(in srgb, var(--accent) 65%, var(--tint));
   transition: height 320ms ease;
 }
 
@@ -401,23 +472,23 @@ h2 {
 }
 
 .heatmap__cell[data-level="0"] {
-  background: color-mix(in srgb, var(--accent-2) 16%, #ffffff);
+  background: var(--heat-0);
 }
 
 .heatmap__cell[data-level="1"] {
-  background: color-mix(in srgb, var(--accent) 26%, #ffffff);
+  background: color-mix(in srgb, var(--accent) 26%, var(--tint));
 }
 
 .heatmap__cell[data-level="2"] {
-  background: color-mix(in srgb, var(--accent) 42%, #ffffff);
+  background: color-mix(in srgb, var(--accent) 42%, var(--tint));
 }
 
 .heatmap__cell[data-level="3"] {
-  background: color-mix(in srgb, var(--accent) 58%, #ffffff);
+  background: color-mix(in srgb, var(--accent) 58%, var(--tint));
 }
 
 .heatmap__cell[data-level="4"] {
-  background: color-mix(in srgb, var(--accent) 78%, #ffffff);
+  background: color-mix(in srgb, var(--accent) 78%, var(--tint));
 }
 
 .heatmap__cell:hover::after {
@@ -429,7 +500,7 @@ h2 {
   padding: 0.35rem 0.5rem;
   border-radius: 8px;
   background: var(--text);
-  color: #ffffff;
+  color: var(--on-text);
   font-size: 0.75rem;
   white-space: nowrap;
   pointer-events: none;
@@ -452,23 +523,23 @@ h2 {
 }
 
 .heatmap__swatch--0 {
-  background: color-mix(in srgb, var(--accent-2) 16%, #ffffff);
+  background: var(--heat-0);
 }
 
 .heatmap__swatch--1 {
-  background: color-mix(in srgb, var(--accent) 26%, #ffffff);
+  background: color-mix(in srgb, var(--accent) 26%, var(--tint));
 }
 
 .heatmap__swatch--2 {
-  background: color-mix(in srgb, var(--accent) 42%, #ffffff);
+  background: color-mix(in srgb, var(--accent) 42%, var(--tint));
 }
 
 .heatmap__swatch--3 {
-  background: color-mix(in srgb, var(--accent) 58%, #ffffff);
+  background: color-mix(in srgb, var(--accent) 58%, var(--tint));
 }
 
 .heatmap__swatch--4 {
-  background: color-mix(in srgb, var(--accent) 78%, #ffffff);
+  background: color-mix(in srgb, var(--accent) 78%, var(--tint));
 }
 
 .heatmap__hint {
@@ -494,7 +565,7 @@ h2 {
   padding: clamp(0.9rem, 2vw, 1.2rem);
   border-radius: calc(var(--radius) + 6px);
   border: 1px solid var(--border);
-  background: linear-gradient(180deg, #ffffff 0%, var(--surface-2) 100%);
+  background: linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
   box-shadow: var(--shadow);
   min-height: 320px;
 }
@@ -644,7 +715,7 @@ h2 {
   border: 0;
   border-radius: 999px;
   background: var(--accent);
-  color: #ffffff;
+  color: var(--on-accent);
   font: inherit;
   font-size: 0.85rem;
   cursor: pointer;
@@ -674,7 +745,7 @@ h2 {
   border: 2px solid transparent;
   background: var(--swatch);
   cursor: pointer;
-  box-shadow: inset 0 0 0 2px #ffffff;
+  box-shadow: inset 0 0 0 2px var(--tint);
 }
 
 .color-btn[aria-pressed="true"] {
@@ -803,7 +874,7 @@ h2 {
   border-radius: 999px;
   border: 0;
   background: var(--accent);
-  color: #ffffff;
+  color: var(--on-accent);
   font: inherit;
   font-size: 0.9rem;
   cursor: pointer;
@@ -864,12 +935,12 @@ h2 {
 }
 
 .emoji-btn[aria-pressed="true"] {
-  background: color-mix(in srgb, var(--accent) 22%, #ffffff);
+  background: color-mix(in srgb, var(--accent) 22%, var(--tint));
   border-color: color-mix(in srgb, var(--accent) 60%, transparent);
 }
 
 .emoji-btn:hover {
-  background: color-mix(in srgb, var(--accent) 14%, #ffffff);
+  background: color-mix(in srgb, var(--accent) 14%, var(--tint));
 }
 
 .add-form {
@@ -897,8 +968,8 @@ h2 {
   padding: 0.75rem 1.6rem;
   font: inherit;
   font-weight: 600;
-  color: #ffffff;
-  background: linear-gradient(120deg, color-mix(in srgb, var(--accent) 90%, #ffffff), var(--accent));
+  color: var(--on-accent);
+  background: linear-gradient(120deg, color-mix(in srgb, var(--accent) 90%, var(--tint)), var(--accent));
   border: 0;
   border-radius: 999px;
   cursor: pointer;

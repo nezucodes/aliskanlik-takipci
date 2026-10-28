@@ -5,8 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Alışkanlık Takipçisi</title>
     <meta name="description" content="Günlük alışkanlıklarını tek dokunuşla işaretle, serini gör." />
-    <meta name="theme-color" content="#f6f8ff" />
+    <meta name="theme-color" content="#f7f8ff" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Alışkanlık" />
     <link rel="stylesheet" href="styles.css" />
+    <script>
+      // Tema ilk boyamadan ÖNCE uygulanmalı. Modül script'ler ertelenir (defer),
+      // o yüzden burada bilinçli olarak küçük bir satır içi script var.
+      // js/theme.js ile aynı kural: tercih saklanır, tema türetilir.
+      (() => {
+        try {
+          const pref = localStorage.getItem("ht.theme") || "system";
+          const dark =
+            pref === "dark" ||
+            (pref === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.dataset.theme = dark ? "dark" : "light";
+          const meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute("content", dark ? "#10131c" : "#f7f8ff");
+        } catch {
+          // localStorage kapalıysa varsayılan (açık tema) kalır.
+        }
+      })();
+    </script>
   </head>
   <body>
     <header class="site-head">
@@ -30,6 +53,26 @@
               </label>
               <button id="back-today" class="menu__action" type="button" hidden>Bugüne dön</button>
             </div>
+
+            <div class="menu__section">
+              <p class="menu__title">Görünüm</p>
+              <div class="theme-switch" id="theme-switch" role="radiogroup" aria-label="Tema">
+                <button type="button" data-theme-pref="light" aria-pressed="false">Açık</button>
+                <button type="button" data-theme-pref="dark" aria-pressed="false">Koyu</button>
+                <button type="button" data-theme-pref="system" aria-pressed="false">Sistem</button>
+              </div>
+            </div>
+
+            <div class="menu__section">
+              <p class="menu__title">Yedek</p>
+              <button id="export-btn" class="menu__action" type="button">Yedeği indir (JSON)</button>
+              <label class="menu__action menu__action--file">
+                Yedekten yükle
+                <input id="import-input" type="file" accept="application/json,.json" hidden />
+              </label>
+              <p class="menu__status" id="backup-status" aria-live="polite"></p>
+            </div>
+
             <p class="view-hint" id="view-hint" aria-live="polite"></p>
           </div>
         </div>

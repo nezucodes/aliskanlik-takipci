@@ -35,7 +35,13 @@ async function request(path, { method = "GET", body } = {}) {
     });
   } catch {
     // Ağ hatası: sunucu kapalı, DNS yok, offline...
-    throw new ApiError("Sunucuya ulaşılamadı. Terminalde `npm run server` çalışıyor mu?", 0);
+    const offline = globalThis.navigator?.onLine === false;
+    throw new ApiError(
+      offline
+        ? "Çevrimdışısın. Veriler sunucuda; bağlantı gelince tekrar dene."
+        : "Sunucuya ulaşılamadı. Terminalde `npm run server` çalışıyor mu?",
+      0,
+    );
   }
 
   if (response.status === 204) return null;
@@ -247,4 +253,18 @@ export async function seedIfEmpty() {
     // eslint-disable-next-line no-await-in-loop
     await createHabit(habit);
   }
+}
+
+/**
+ * Yedek dosyasını sunucuya aktarır.
+ * Sunucu aynı isimli kayıtları birleştirir; mevcut veri silinmez.
+ * Dönüş: { habitsImported, entriesImported } — yalnızca YENİ eklenenler.
+ */
+export async function importBackup({ habits = [], archived = [], entries = [] } = {}) {
+  const result = await request("/import", {
+    method: "POST",
+    body: { habits, archived, entries },
+  });
+  await loadState();
+  return result;
 }

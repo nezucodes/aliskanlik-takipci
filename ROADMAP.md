@@ -12,7 +12,7 @@
 | 1 · Analitik (haftalık görünüm + ısı haritası) | ✅ bitti |
 | 2 · İstatistik paneli + düzenleme | ✅ bitti |
 | 3 · Kendi API + SQLite | ✅ bitti |
-| 4 · PWA + tema + yedekleme | ⬜ |
+| 4 · PWA + tema + yedekleme | ✅ bitti |
 | 5 · Yayın (deploy) | ⬜ |
 | 6 · iOS (SwiftUI) portu | ⬜ opsiyonel |
 
@@ -60,17 +60,29 @@
 ## Aşama 4 — PWA + tema + yedekleme (3-5 gün)
 
 **Yapılacaklar**
-- [ ] `manifest.webmanifest`: isim, ikon, tema rengi, tam ekran
-- [ ] `sw.js`: çevrimdışı önbellek (offline açılış)
-- [ ] Ana ekrana ekleme (iPhone + Mac)
-- [ ] Açık/koyu/sistem tema anahtarı
-- [ ] JSON dışa/içe aktarma (yedek)
+- [x] `manifest.webmanifest`: isim, ikon, tema rengi, tam ekran
+- [x] `sw.js`: çevrimdışı önbellek (offline açılış)
+- [x] Ana ekrana ekleme (manifest + SW hazır; iPhone/Mac'te "Ana Ekrana Ekle" ile denenebilir)
+- [x] Açık/koyu/sistem tema anahtarı
+- [x] JSON dışa/içe aktarma (yedek)
 
 **Kazanım**
 - Service worker yaşam döngüsü ve önbellek stratejileri
 - "Web sitesi" ile "kurulabilir uygulama" arasındaki fark
 - Tema sistemleri, `prefers-color-scheme`, kullanıcı tercihi saklama
 - Veri taşınabilirliği ve yedekleme sorumluluğu
+
+**Teknik notlar**
+- Önbellek stratejisi **network-first**: çevrimiçiyken hep taze dosya, çevrimdışıyken son sürüm.
+  Geliştirirken bayat kod görmemek için bilinçli seçim (cache-first olsaydı her değişiklikte sürüm artırmak gerekirdi).
+- `/api/` istekleri **asla** önbelleğe alınmaz: kullanıcı verisi bayat olmamalı. Veri için sunucu şart,
+  uygulama bunu "Çevrimdışısın. Veriler sunucuda..." mesajıyla açıkça söyler.
+- Tema: tercih `light | dark | system` olarak saklanır, **gerçek tema türetilir** (`resolveTheme`).
+  İlk boyamadan önce çalışan küçük satır içi script, koyu temada beyaz ekran parlamasını (FOUC) engeller.
+- Koyu temada ısı haritasının "boş gün" rengi kart zemininden ayrı tutulur (`--heat-0`),
+  yoksa 0 kayıt ile 1 kayıt ayırt edilemiyordu.
+- Yedek formatı: `{ app, version, exportedAt, habits, archived, entries }`.
+  İçe aktarma **isim bazlı birleştirir** (id değil) ve hiçbir şeyi silmez → round-trip kopya üretmez.
 
 ---
 

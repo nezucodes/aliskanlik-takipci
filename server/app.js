@@ -181,6 +181,19 @@ export function createApp({ dbPath = join(here, "data", "ht.db"), seed = false }
     res.json(entryFromRow(row));
   });
 
+  // Yedek: tek dosyada tam durum. `version` ileride format değişirse işe yarar.
+  // Aynı dosya /api/import'a geri verilebilir (round-trip).
+  app.get("/api/export", (req, res) => {
+    res.json({
+      app: "aliskanlik-takipci",
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      habits: allHabitsStmt.all().map(habitFromRow),
+      archived: archivedHabitsStmt.all().map(habitFromRow),
+      entries: allEntriesStmt.all().map(entryFromRow),
+    });
+  });
+
   // localStorage'dan tek seferlik taşıma.
   //
   // Kimlik kuralı: id değil, İSİM. Aynı isim daha önce taşındıysa yeni kayıt
@@ -189,7 +202,10 @@ export function createApp({ dbPath = join(here, "data", "ht.db"), seed = false }
   // kopyaları engeller. Aynı güne düşen kayıtlar bilgi kaybetmeden birleşir:
   // işaretlerden biri true ise true kalır, daha uzun not kazanır.
   app.post("/api/import", (req, res) => {
-    const habits = Array.isArray(req.body?.habits) ? req.body.habits : [];
+    const incomingHabits = Array.isArray(req.body?.habits) ? req.body.habits : [];
+    const archivedHabits = Array.isArray(req.body?.archived) ? req.body.archived : [];
+    // Dışa aktardığımız dosya "archived" ayrı tutar; içe aktarırken aynı listeye katarız.
+    const habits = [...incomingHabits, ...archivedHabits];
     const entries = Array.isArray(req.body?.entries) ? req.body.entries : [];
 
     const insertHabit = db.prepare(

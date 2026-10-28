@@ -235,6 +235,51 @@ test("import aynı isimli iki origin'i tek alışkanlıkta birleştirir", async 
   assert.equal(overlap.note, "10 dakika", "daha uzun not kazanır");
 });
 
+test("export → import round-trip yeni kayıt üretmez", async () => {
+  const exported = await api("/api/export");
+  assert.equal(exported.status, 200);
+  assert.equal(exported.body.app, "aliskanlik-takipci");
+  assert.equal(exported.body.version, 1);
+  assert.equal(typeof exported.body.exportedAt, "string");
+  assert.ok(Array.isArray(exported.body.habits));
+  assert.ok(Array.isArray(exported.body.archived));
+  assert.ok(Array.isArray(exported.body.entries));
+
+  const before = await api("/api/state");
+
+  const result = await api("/api/import", { method: "POST", body: exported.body });
+  assert.deepEqual(result.body, { habitsImported: 0, entriesImported: 0 });
+
+  const after = await api("/api/state");
+  assert.deepEqual(after.body, before.body);
+});
+
+test("import arşivlenmiş alışkanlığı arşivde tutar", async () => {
+  const backup = {
+    habits: [],
+    archived: [
+      {
+        id: "arc-1",
+        name: "Eski kitap",
+        emoji: "📚",
+        color: "#7c8bff",
+        createdAt: "2026-10-01",
+        archivedAt: "2026-10-10",
+      },
+    ],
+    entries: [],
+  };
+
+  const result = await api("/api/import", { method: "POST", body: backup });
+  assert.deepEqual(result.body, { habitsImported: 1, entriesImported: 0 });
+
+  const state = await api("/api/state");
+  const restored = state.body.archived.find((habit) => habit.id === "arc-1");
+  assert.ok(restored, "arşiv listesinde olmalı");
+  assert.equal(restored.archivedAt, "2026-10-10");
+  assert.equal(state.body.habits.some((habit) => habit.id === "arc-1"), false);
+});
+
 test("bilinmeyen API yolu JSON 404 döner", async () => {
   const res = await api("/api/yok");
   assert.equal(res.status, 404);

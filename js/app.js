@@ -6,6 +6,8 @@
 import { addDays, formatTR, getActiveToday, isDebugToday, isISODate, parseISO, todayISO } from "./date.js";
 import { completionRate, computeStreak, longestStreak } from "./streak.js";
 import { buildSummary } from "./stats.js";
+import { applyTheme, getPreference, initTheme } from "./theme.js";
+import { registerServiceWorker } from "./pwa.js";
 import * as store from "./apiStore.js";
 
 const pendingListEl = document.querySelector("#pending-list");
@@ -41,6 +43,10 @@ const statMonthSubEl = document.querySelector("#stat-month-sub");
 const appErrorEl = document.querySelector("#app-error");
 const appErrorTextEl = document.querySelector("#app-error-text");
 const appErrorCloseEl = document.querySelector("#app-error-close");
+const themeSwitchEl = document.querySelector("#theme-switch");
+const exportBtn = document.querySelector("#export-btn");
+const importInput = document.querySelector("#import-input");
+const backupStatusEl = document.querySelector("#backup-status");
 
 const EMOJIS = ["✅", "📚", "🚶", "💻", "🏋️", "💧", "🧘", "🛏️", "🍎", "🎯"];
 const PALETTE = ["#7c8bff", "#8fd3c7", "#f7b7a3", "#e6a8d7", "#f2d098", "#9ec5fe"];
@@ -77,6 +83,104 @@ async function mutate(action) {
   } catch (error) {
     console.error(error);
     showError(error);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Tema                                                                */
+/* ------------------------------------------------------------------ */
+
+function renderThemeSwitch(preference) {
+  if (!themeSwitchEl) return;
+  for (const btn of themeSwitchEl.querySelectorAll("button")) {
+    btn.setAttribute("aria-pressed", String(btn.dataset.themePref === preference));
+  }
+}
+
+function initThemeControls() {
+  initTheme(); // kayıtlı tercihi uygula (satır içi script zaten ilk boyamayı yaptı)
+  renderThemeSwitch(getPreference());
+
+  if (!themeSwitchEl) return;
+  for (const btn of themeSwitchEl.querySelectorAll("button")) {
+    btn.addEventListener("click", () => {
+      renderThemeSwitch(applyTheme(btn.dataset.themePref));
+    });
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Yedekleme: dışa / içe aktarma                                       */
+/* ------------------------------------------------------------------ */
+
+function setBackupStatus(message) {
+  if (backupStatusEl) backupStatusEl.textContent = message;
+}
+
+async function handleExport() {
+  try {
+    const response = await fetch("/api/export");
+    if (!response.ok) throw new Error(`Yedek alınamadı (HTTP ${response.status})`);
+    const data = await response.json();
+
+    // Blob + geçici URL: sunucuya dosya yazmadan tarayıcıda indirme.
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `aliskanlik-yedek-${todayISO()}.json`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+
+    const total = data.habits.length + data.archived.length;
+    setBackupStatus(`Yedek indirildi · ${total} alışkanlık · ${data.entries.length} kayıt`);
+  } catch (error) {
+    console.error(error);
+    setBackupStatus(error?.message ?? "Yedek alınamadı.");
+  }
+}
+
+/** Yedek dosyasını doğrula: eksik/bozuk alanlar sessizce boş sayılır. */
+function normalizeBackup(data) {
+  if (!data || typeof data !== "object") return null;
+  const habits = Array.isArray(data.habits) ? data.habits : [];
+  const archived = Array.isArray(data.archived) ? data.archived : [];
+  const entries = Array.isArray(data.entries) ? data.entries : [];
+  if (habits.length + archived.length === 0 && entries.length === 0) return null;
+  return { habits, archived, entries };
+}
+
+async function handleImportFile(file) {
+  try {
+    const data = normalizeBackup(JSON.parse(await file.text()));
+    if (!data) {
+      setBackupStatus("Bu dosyada alışkanlık veya kayıt bulunamadı.");
+      return;
+    }
+
+    const habitCount = data.habits.length + data.archived.length;
+    const ok = confirm(
+      `${habitCount} alışkanlık ve ${data.entries.length} kayıt içe aktarılacak.\n` +
+        "Aynı isimli kayıtlar birleştirilir, mevcut veriler silinmez. Devam?",
+    );
+    if (!ok) return;
+
+    const result = await store.importBackup(data);
+    clearError();
+    render();
+
+    setBackupStatus(
+      result.habitsImported + result.entriesImported === 0
+        ? "Yeni kayıt yok; hepsi zaten mevcuttu."
+        : `${result.habitsImported} alışkanlık, ${result.entriesImported} kayıt eklendi.`,
+    );
+  } catch (error) {
+    console.error(error);
+    setBackupStatus(error?.message ?? "Yedek yüklenemedi.");
+  } finally {
+    if (importInput) importInput.value = "";
   }
 }
 
@@ -585,10 +689,26 @@ formEl.addEventListener("submit", (event) => {
 
 initEmojiPicker();
 initColorPicker();
+initThemeControls();
 
 if (appErrorCloseEl) {
   appErrorCloseEl.addEventListener("click", clearError);
 }
+
+if (exportBtn) {
+  exportBtn.addEventListener("click", () => {
+    void handleExport();
+  });
+}
+
+if (importInput) {
+  importInput.addEventListener("change", () => {
+    const file = importInput.files?.[0];
+    if (file) void handleImportFile(file);
+  });
+}
+
+registerServiceWorker();
 
 /**
  * Açılış: sunucudan snapshot'ı çek, gerekirse örnek veriyi ekle, sonra çiz.
