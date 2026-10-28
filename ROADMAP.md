@@ -13,7 +13,7 @@
 | 2 · İstatistik paneli + düzenleme | ✅ bitti |
 | 3 · Kendi API + SQLite | ✅ bitti |
 | 4 · PWA + tema + yedekleme | ✅ bitti |
-| 5 · Yayın (deploy) | ⬜ |
+| 5 · Yayın (deploy) | ✅ bitti |
 | 6 · iOS (SwiftUI) portu | ⬜ opsiyonel |
 
 ---
@@ -89,17 +89,38 @@
 ## Aşama 5 — Yayın (1-2 gün)
 
 **Yapılacaklar**
-- [ ] Frontend: GitHub Pages
-- [ ] API: ücretsiz bir host (Fly.io / Render / kendi VPS)
-- [ ] Ortam değişkenleri, CORS, HTTPS
-- [ ] README: ekran görüntüsü, kurulum, mimari şeması
-- [ ] Lighthouse ≥ 95 kontrolü
+- [x] Frontend: GitHub Pages
+- [x] API: ücretsiz bir host (Fly.io / Render / kendi VPS)
+- [x] Ortam değişkenleri, CORS, HTTPS
+- [x] README: ekran görüntüsü, kurulum, mimari şeması
+- [x] Lighthouse ≥ 95 kontrolü
 
 **Kazanım**
 - Deploy kavramı: build, ortam, URL, DNS
 - CORS'un neden var olduğu (ve neden can sıkıcı olduğu)
 - Gerçek kullanıcıya açık ürün yayınlama deneyimi
 - Portfolyoda canlı link + kaynak kod
+
+**Canlı adresler**
+- Arayüz: <https://nezucodes.github.io/aliskanlik-takipci/>
+- API: <https://aliskanlik-api.onrender.com/api/health>
+
+**Teknik notlar**
+- **İki origin:** statik dosyalar Pages'te, API Render'da. Tarayıcı farklı origin'e istek
+  atarken önce izin sorar (preflight); sunucu `ALLOWED_ORIGINS` listesindekilere
+  `Access-Control-Allow-Origin` döner. CORS bir sunucu güvenliği değil, tarayıcı politikasıdır.
+- **Göreli yollar:** Pages uygulamayı `/aliskanlik-takipci/` alt dizininde servis eder.
+  Bu yüzden manifest, ikonlar ve service worker yolları göreli; `start_url` ve `scope` `"./"`.
+  Kök mutlak yol (`/icons/...`) burada kırılırdı.
+- **Ortam algılama:** `js/config.js` host'a bakar. Build adımı olmadığı için ortam
+  değişkeni yok; build eklenirse `import.meta.env.VITE_API_URL` olurdu.
+- **Ücretsiz katman:** Render servisi 15 dk hareketsizlikte uyur (ilk istek 30–60 sn) ve
+  diski kalıcı değildir — yeniden deploy'da SQLite sıfırlanır. Bu yüzden JSON yedek
+  (Aşama 4) gerçek bir veri sahipliği aracı.
+- **Hata dürüstlüğü:** yayında "terminalde `npm run server` çalışıyor mu?" demek yanlış;
+  mesaj ortama göre değişiyor ve "Tekrar dene" düğmesi soğuk başlangıcı telafi ediyor.
+- **Lighthouse:** 100 erişilebilirlik / 100 en iyi uygulamalar / 100 SEO.
+  Tek eksik, `aria-label` taşıyan rolsüz `div`'lerdi (`role="img"` / `role="group"` eklendi).
 
 ---
 
