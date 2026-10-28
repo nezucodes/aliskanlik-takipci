@@ -160,6 +160,7 @@ function renderIcon(size, { rounded = true, scale = 1 } = {}) {
 mkdirSync(outDir, { recursive: true });
 
 const outputs = [
+  { file: "favicon-32.png", size: 32, rounded: true, scale: 1 },
   { file: "icon-192.png", size: 192, rounded: true, scale: 1 },
   { file: "icon-512.png", size: 512, rounded: true, scale: 1 },
   // Maskable: platform kendi maskesini uygular → tam dolu zemin + güvenli alan.
