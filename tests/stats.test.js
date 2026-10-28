@@ -71,6 +71,20 @@ test("boş veride sıfır döner, hata atmaz", () => {
   );
 });
 
+test("createdAt'ten önce işaretlenen günler oranı %100'ün üstüne çıkarmaz", () => {
+  // Kullanıcı "geçmişe bak" ile 20 Ekim'i işaretlemiş ama alışkanlık 27'sinde eklenmiş.
+  const lateHabits = [{ id: "a", name: "Yeni", createdAt: "2026-10-27" }];
+  const entries = [
+    { habitId: "a", date: "2026-10-20", done: true },
+    { habitId: "a", date: "2026-10-27", done: true },
+  ];
+  const summary = buildSummary(lateHabits, entries, TODAY);
+  assert.equal(summary.monthDone, 2);
+  assert.equal(summary.monthPossible, 8); // 20 → 27 Ekim
+  assert.equal(summary.monthRate, 0.25);
+  assert.ok(summary.monthRate <= 1);
+});
+
 test("geçersiz tarihli kayıtlar yok sayılır", () => {
   const entries = [
     { habitId: "a", date: "bozuk", done: true },

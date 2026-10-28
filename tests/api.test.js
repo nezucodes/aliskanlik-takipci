@@ -203,6 +203,38 @@ test("import aynı veriyi iki kez yazmaz", async () => {
   assert.equal(state.body.entries[0].note, "taşındı");
 });
 
+test("import aynı isimli iki origin'i tek alışkanlıkta birleştirir", async () => {
+  // Senaryo: aynı örnek alışkanlık iki ayrı origin'de farklı id ile oluşmuş.
+  const legacy = {
+    habits: [
+      { id: "o1", name: "Meditasyon", emoji: "🧘", createdAt: "2026-10-05" },
+      { id: "o2", name: "  meditasyon  ", emoji: "🧘", createdAt: "2026-10-06" },
+    ],
+    entries: [
+      { habitId: "o1", date: "2026-10-07", done: true, note: "" },
+      { habitId: "o2", date: "2026-10-07", done: true, note: "10 dakika" },
+      { habitId: "o2", date: "2026-10-08", done: true, note: "" },
+    ],
+  };
+
+  const first = await api("/api/import", { method: "POST", body: legacy });
+  assert.deepEqual(first.body, { habitsImported: 1, entriesImported: 2 });
+
+  const second = await api("/api/import", { method: "POST", body: legacy });
+  assert.deepEqual(second.body, { habitsImported: 0, entriesImported: 0 });
+
+  const state = await api("/api/state");
+  const matches = state.body.habits.filter((habit) => habit.name.toLowerCase() === "meditasyon");
+  assert.equal(matches.length, 1, "aynı isim tek kayıt olmalı");
+
+  const habitEntries = state.body.entries.filter((entry) => entry.habitId === matches[0].id);
+  assert.equal(habitEntries.length, 2, "iki günün kaydı da korunmalı");
+
+  const overlap = habitEntries.find((entry) => entry.date === "2026-10-07");
+  assert.equal(overlap.done, true);
+  assert.equal(overlap.note, "10 dakika", "daha uzun not kazanır");
+});
+
 test("bilinmeyen API yolu JSON 404 döner", async () => {
   const res = await api("/api/yok");
   assert.equal(res.status, 404);
@@ -210,7 +242,12 @@ test("bilinmeyen API yolu JSON 404 döner", async () => {
 });
 
 test("sunucu ve test klasörleri dışarıya kapalı", async () => {
-  for (const path of ["/server/app.js", "/tests/api.test.js", "/node_modules/express/package.json"]) {
+  for (const path of [
+    "/server/app.js",
+    "/tests/api.test.js",
+    "/scripts/dedupe.js",
+    "/node_modules/express/package.json",
+  ]) {
     const res = await api(path);
     assert.equal(res.status, 404, `${path} erişilebilir olmamalı`);
   }

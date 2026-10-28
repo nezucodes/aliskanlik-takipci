@@ -181,7 +181,13 @@ export function createApp({ dbPath = join(here, "data", "ht.db"), seed = false }
     res.json(entryFromRow(row));
   });
 
-  // localStorage'dan tek seferlik taşıma için.
+  // localStorage'dan tek seferlik taşıma.
+  //
+  // Kimlik kuralı: id değil, İSİM. Aynı isim daha önce taşındıysa yeni kayıt
+  // açmıyoruz; gelen kayıtları var olan alışkanlığa bağlıyoruz. Bu, aynı örnek
+  // verinin iki farklı origin'den (localhost + 127.0.0.1) taşınmasıyla oluşan
+  // kopyaları engeller. Aynı güne düşen kayıtlar bilgi kaybetmeden birleşir:
+  // işaretlerden biri true ise true kalır, daha uzun not kazanır.
   app.post("/api/import", (req, res) => {
     const habits = Array.isArray(req.body?.habits) ? req.body.habits : [];
     const entries = Array.isArray(req.body?.entries) ? req.body.entries : [];
@@ -191,19 +197,41 @@ export function createApp({ dbPath = join(here, "data", "ht.db"), seed = false }
        VALUES (?, ?, ?, ?, ?, ?)`,
     );
     const insertEntry = db.prepare(
-      `INSERT OR IGNORE INTO entries (habit_id, date, done, note) VALUES (?, ?, ?, ?)`,
+      "INSERT INTO entries (habit_id, date, done, note) VALUES (?, ?, ?, ?)",
+    );
+    const mergeEntry = db.prepare(
+      `UPDATE entries
+          SET done = MAX(done, ?),
+              note = CASE WHEN length(?) > length(note) THEN ? ELSE note END
+        WHERE habit_id = ? AND date = ?`,
+    );
+    const habitIdByNameStmt = db.prepare(
+      `SELECT id FROM habits
+        WHERE lower(trim(name)) = lower(trim(?))
+        ORDER BY (archived_at IS NOT NULL), created_at
+        LIMIT 1`,
     );
 
     let habitsImported = 0;
     let entriesImported = 0;
+    const idMap = new Map();
 
     db.exec("BEGIN");
     try {
       for (const habit of habits) {
         const name = cleanName(habit?.name);
         if (!habit?.id || !name) continue;
+
+        const sourceId = String(habit.id);
+        // Aynı id veya aynı isim zaten varsa onu kullan (kopya açma).
+        const existing = habitByIdStmt.get(sourceId) ?? habitIdByNameStmt.get(name);
+        if (existing) {
+          idMap.set(sourceId, existing.id);
+          continue;
+        }
+
         const result = insertHabit.run(
-          String(habit.id),
+          sourceId,
           name,
           String(habit.emoji ?? "✅").slice(0, 4),
           String(habit.color ?? "#7c8bff"),
@@ -211,18 +239,26 @@ export function createApp({ dbPath = join(here, "data", "ht.db"), seed = false }
           isISODate(habit.archivedAt) ? habit.archivedAt : null,
         );
         habitsImported += result.changes;
+        idMap.set(sourceId, sourceId);
       }
+
       for (const entry of entries) {
         if (!entry?.habitId || !isISODate(entry.date)) continue;
-        // Yabancı anahtar: var olmayan alışkanlığa kayıt yazmayalım.
-        if (!habitByIdStmt.get(String(entry.habitId))) continue;
-        const result = insertEntry.run(
-          String(entry.habitId),
-          entry.date,
-          entry.done ? 1 : 0,
-          cleanNote(entry.note),
-        );
-        entriesImported += result.changes;
+
+        // Yabancı anahtar: kaynağı ne taşınmış ne de var olan alışkanlığa bağlanamıyorsa atla.
+        const targetId =
+          idMap.get(String(entry.habitId)) ?? habitByIdStmt.get(String(entry.habitId))?.id;
+        if (!targetId) continue;
+
+        const done = entry.done ? 1 : 0;
+        const note = cleanNote(entry.note);
+
+        if (!entryStmt.get(targetId, entry.date)) {
+          insertEntry.run(targetId, entry.date, done, note);
+          entriesImported += 1;
+        } else {
+          mergeEntry.run(done, note, note, targetId, entry.date);
+        }
       }
       db.exec("COMMIT");
     } catch (error) {
@@ -233,9 +269,9 @@ export function createApp({ dbPath = join(here, "data", "ht.db"), seed = false }
     res.json({ habitsImported, entriesImported });
   });
 
-  // Statik dosyalar: sunucu klasörü ve testler dışarıdan erişilemesin.
+  // Statik dosyalar: sunucu klasörü, testler ve araçlar dışarıdan erişilemesin.
   app.use((req, res, next) => {
-    if (/^\/(server|tests|node_modules|\.git)(\/|$)/.test(req.path)) {
+    if (/^\/(server|tests|scripts|node_modules|\.git)(\/|$)/.test(req.path)) {
       return res.status(404).json({ error: "Bulunamadı" });
     }
     next();

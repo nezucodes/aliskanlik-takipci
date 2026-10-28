@@ -45,7 +45,18 @@ export function buildSummary(habits, entries, today) {
 
   for (const habit of habits) {
     // Alışkanlık bu aydan sonra eklendiyse sadece eklendiği günden itibaren say.
-    const habitStart = habit.createdAt && habit.createdAt > start ? habit.createdAt : start;
+    let habitStart = habit.createdAt && habit.createdAt > start ? habit.createdAt : start;
+
+    // "Geçmişe bak" ekranından createdAt'ten ÖNCE bir gün işaretlenebilir.
+    // O gün de bir "imkan"dı; saymazsak payda küçülür ve oran %100'ü aşar.
+    const monthDates = (datesByHabit.get(habit.id) ?? []).filter(
+      (date) => date >= start && date <= today,
+    );
+    if (monthDates.length > 0) {
+      const firstDone = monthDates.reduce((min, date) => (date < min ? date : min), monthDates[0]);
+      if (firstDone < habitStart) habitStart = firstDone;
+    }
+
     if (habitStart > today) continue; // gelecekte oluşturulmuş (debug) kayıtlar
     monthPossible += daysBetween(habitStart, today) + 1;
   }
@@ -56,6 +67,7 @@ export function buildSummary(habits, entries, today) {
     bestStreak,
     monthDone,
     monthPossible,
-    monthRate: monthPossible > 0 ? monthDone / monthPossible : 0,
+    // Payda her zaman payı kapsar; yine de kayan nokta için üstten sınırlıyoruz.
+    monthRate: monthPossible > 0 ? Math.min(1, monthDone / monthPossible) : 0,
   };
 }
