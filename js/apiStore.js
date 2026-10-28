@@ -9,7 +9,7 @@
 //    çünkü hata durumunda arayüzün yalan söylemesini istemiyoruz.
 
 import { todayISO } from "./date.js";
-import { API_ROOT } from "./config.js";
+import { API_ROOT, connectionErrorMessage } from "./config.js";
 
 const LEGACY_KEY = "ht.v1";
 const MIGRATED_KEY = "ht.migrated.v1";
@@ -39,7 +39,7 @@ async function request(path, { method = "GET", body } = {}) {
     throw new ApiError(
       offline
         ? "Çevrimdışısın. Veriler sunucuda; bağlantı gelince tekrar dene."
-        : "Sunucuya ulaşılamadı. Terminalde `npm run server` çalışıyor mu?",
+        : connectionErrorMessage(),
       0,
     );
   }
@@ -51,7 +51,7 @@ async function request(path, { method = "GET", body } = {}) {
     // 502/503/504: arada bir vekil (proxy) var ama arkadaki sunucu kapalı.
     const unreachable = response.status >= 502 && response.status <= 504;
     const fallback = unreachable
-      ? "Sunucuya ulaşılamadı. Terminalde `npm run server` çalışıyor mu?"
+      ? connectionErrorMessage()
       : `İstek başarısız (HTTP ${response.status})`;
     throw new ApiError(data?.error ?? fallback, response.status);
   }

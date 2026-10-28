@@ -15,6 +15,14 @@ const pendingListEl = document.querySelector("#pending-list");
 const doneListEl = document.querySelector("#done-list");
 const pendingEmptyEl = document.querySelector("#pending-empty");
 const doneEmptyEl = document.querySelector("#done-empty");
+
+// Boş durum metinleri HTML'den gelir; yükleme hatasında geçici olarak
+// değiştirip başarılı denemede geri koyacağız.
+const pendingEmptyText = pendingEmptyEl?.textContent ?? "";
+const doneEmptyText = doneEmptyEl?.textContent ?? "";
+
+// Veri hiç yüklenemediyse boş durum "her şey tamam" dememeli: yanlış bilgi olur.
+let loadFailed = false;
 const formEl = document.querySelector("#add-form");
 const inputEl = document.querySelector("#habit-name");
 const todayLabelEl = document.querySelector("#today-label");
@@ -44,6 +52,7 @@ const statMonthSubEl = document.querySelector("#stat-month-sub");
 const appErrorEl = document.querySelector("#app-error");
 const appErrorTextEl = document.querySelector("#app-error-text");
 const appErrorCloseEl = document.querySelector("#app-error-close");
+const appErrorRetryEl = document.querySelector("#app-error-retry");
 const themeSwitchEl = document.querySelector("#theme-switch");
 const exportBtn = document.querySelector("#export-btn");
 const importInput = document.querySelector("#import-input");
@@ -525,6 +534,11 @@ function render() {
   pendingEmptyEl.hidden = pendingCount > 0;
   doneEmptyEl.hidden = doneCount > 0;
 
+  // Yükleme başarısızsa "her şey tamam" yanılsaması yerine gerçeği söyle.
+  const emptyText = loadFailed ? "Veriler yüklenemedi." : null;
+  pendingEmptyEl.textContent = emptyText ?? pendingEmptyText;
+  doneEmptyEl.textContent = emptyText ?? doneEmptyText;
+
   summaryEl.textContent = habits.length
     ? `${doneCount}/${habits.length} ${isToday ? "bugün tamamlandı" : "bu tarihte tamamlandı"}`
     : "";
@@ -696,6 +710,15 @@ if (appErrorCloseEl) {
   appErrorCloseEl.addEventListener("click", clearError);
 }
 
+if (appErrorRetryEl) {
+  appErrorRetryEl.addEventListener("click", async () => {
+    appErrorRetryEl.disabled = true;
+    clearError();
+    await start();
+    appErrorRetryEl.disabled = false;
+  });
+}
+
 if (exportBtn) {
   exportBtn.addEventListener("click", () => {
     void handleExport();
@@ -719,9 +742,11 @@ async function start() {
   try {
     await store.loadState();
     await store.seedIfEmpty();
+    loadFailed = false;
     clearError();
   } catch (error) {
     console.error(error);
+    loadFailed = true;
     showError(error);
   }
 

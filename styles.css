@@ -292,6 +292,30 @@ h2 {
   font-size: 0.9rem;
 }
 
+/* Tekrar dene: yalnızca yükleme hatasında anlamlı, bu yüzden sade bir düğme. */
+.app-error__retry {
+  flex: none;
+  margin-left: auto;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, transparent);
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.app-error__retry:hover,
+.app-error__retry:focus-visible {
+  background: color-mix(in srgb, var(--danger) 16%, transparent);
+}
+
+.app-error__retry[disabled] {
+  opacity: 0.6;
+  cursor: progress;
+}
+
 .app-error__close {
   flex: none;
   width: 1.8rem;

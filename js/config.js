@@ -20,3 +20,19 @@ export const API_BASE = LOCAL_HOSTS.has(globalThis.location?.hostname ?? "")
   : "https://aliskanlik-api.onrender.com";
 
 export const API_ROOT = `${API_BASE}/api`;
+
+export const IS_LOCAL = API_BASE === "";
+
+/**
+ * Bağlantı hatasında ne söyleneceği ortama göre değişir.
+ *
+ * Yerelde "terminalde `npm run server` çalışıyor mu?" anlamlı.
+ * Yayında ise kullanıcının terminali yok; üstelik ücretsiz servis
+ * hareketsizlikten uyuduğu için ilk istek başarısız olabilir.
+ * Orada doğru mesaj "birazdan tekrar dene"dir.
+ */
+export function connectionErrorMessage({ local = IS_LOCAL } = {}) {
+  return local
+    ? "Sunucuya ulaşılamadı. Terminalde `npm run server` çalışıyor mu?"
+    : "Sunucuya ulaşılamadı. Ücretsiz servis uyanıyor olabilir; birkaç saniye sonra tekrar dene.";
+}
