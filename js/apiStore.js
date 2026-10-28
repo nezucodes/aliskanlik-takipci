@@ -9,8 +9,8 @@
 //    çünkü hata durumunda arayüzün yalan söylemesini istemiyoruz.
 
 import { todayISO } from "./date.js";
+import { API_ROOT } from "./config.js";
 
-const API_ROOT = "/api";
 const LEGACY_KEY = "ht.v1";
 const MIGRATED_KEY = "ht.migrated.v1";
 

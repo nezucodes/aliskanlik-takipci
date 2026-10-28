@@ -5,29 +5,34 @@
 //   - Çevrimiçiyken her zaman taze dosya gelir (geliştirirken bayat kod görmezsin).
 //   - Çevrimdışıyken son başarılı sürüm önbellekten servis edilir.
 //
-// API istekleri (/api/...) ASLA önbelleklenmez: kullanıcı verisi bayat olmamalı.
-// Veri için sunucu gerekir; uygulama bunu ekranda açıkça söyler.
+// API istekleri ASLA önbelleklenmez: kullanıcı verisi bayat olmamalı.
+// Yayında API başka bir origin'de olduğu için ilk kontrol zaten onları eler.
+//
+// Tüm yollar GÖRELİ: uygulama GitHub Pages'te /aliskanlik-takipci/ altında
+// çalıştığı için "/index.html" gibi kök yollar yanlış yere işaret eder.
+// Göreli yollar service worker'ın kendi konumuna göre çözülür.
 
-const VERSION = "v3";
+const VERSION = "v4";
 const CACHE = `ht-shell-${VERSION}`;
 
 const PRECACHE = [
-  "/",
-  "/index.html",
-  "/styles.css",
-  "/manifest.webmanifest",
-  "/js/app.js",
-  "/js/apiStore.js",
-  "/js/date.js",
-  "/js/streak.js",
-  "/js/stats.js",
-  "/js/theme.js",
-  "/js/pwa.js",
-  "/icons/favicon-32.png",
-  "/icons/icon-192.png",
-  "/icons/icon-512.png",
-  "/icons/icon-maskable-512.png",
-  "/icons/apple-touch-icon-180.png",
+  "./",
+  "./index.html",
+  "./styles.css",
+  "./manifest.webmanifest",
+  "./js/app.js",
+  "./js/apiStore.js",
+  "./js/config.js",
+  "./js/date.js",
+  "./js/streak.js",
+  "./js/stats.js",
+  "./js/theme.js",
+  "./js/pwa.js",
+  "./icons/favicon-32.png",
+  "./icons/icon-192.png",
+  "./icons/icon-512.png",
+  "./icons/icon-maskable-512.png",
+  "./icons/apple-touch-icon-180.png",
 ];
 
 self.addEventListener("install", (event) => {
@@ -54,8 +59,8 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
 
   const url = new URL(request.url);
-  if (url.origin !== self.location.origin) return;
-  if (url.pathname.startsWith("/api/")) return; // veri her zaman ağdan
+  if (url.origin !== self.location.origin) return; // API başka origin'de
+  if (url.pathname.startsWith("/api/")) return; // yerel API de asla önbelleğe girmez
 
   event.respondWith(
     fetch(request)
@@ -72,7 +77,7 @@ self.addEventListener("fetch", (event) => {
 
         // Sayfa gezinmesi: kabuğu döndür (SPA gibi davran).
         if (request.mode === "navigate") {
-          const shell = await caches.match("/index.html");
+          const shell = await caches.match("./index.html");
           if (shell) return shell;
         }
 

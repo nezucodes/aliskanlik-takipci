@@ -11,20 +11,23 @@ test("manifest kurulabilir uygulama için gerekli alanları içerir", () => {
   assert.equal(typeof manifest.name, "string");
   assert.ok(manifest.name.length > 0);
   assert.equal(typeof manifest.short_name, "string");
-  assert.equal(manifest.start_url, "/");
-  assert.equal(manifest.scope, "/");
+  assert.equal(manifest.start_url, "./");
+  assert.equal(manifest.scope, "./");
   assert.equal(manifest.display, "standalone");
   assert.match(manifest.background_color, /^#[0-9a-f]{6}$/i);
   assert.match(manifest.theme_color, /^#[0-9a-f]{6}$/i);
 });
 
-test("manifest 192 ve 512 px ikonları tanımlar", () => {
+test("manifest 192, 512 ve 1024 px ikonları tanımlar", () => {
   const sizes = new Set(manifest.icons.map((icon) => icon.sizes));
   assert.ok(sizes.has("192x192"));
   assert.ok(sizes.has("512x512"));
+  assert.ok(sizes.has("1024x1024"));
   for (const icon of manifest.icons) {
     assert.equal(icon.type, "image/png");
-    assert.match(icon.src, /^\/icons\/.+\.png$/);
+    // Göreli yol: GitHub Pages alt dizininde de çalışsın (kök "/" kırılır).
+    assert.match(icon.src, /^icons\/.+\.png$/);
+    assert.ok(!icon.src.startsWith("/"), "kök mutlak yol kullanılmamalı");
   }
 });
 

@@ -8,6 +8,7 @@ import { completionRate, computeStreak, longestStreak } from "./streak.js";
 import { buildSummary } from "./stats.js";
 import { applyTheme, getPreference, initTheme } from "./theme.js";
 import { registerServiceWorker } from "./pwa.js";
+import { API_ROOT } from "./config.js";
 import * as store from "./apiStore.js";
 
 const pendingListEl = document.querySelector("#pending-list");
@@ -119,7 +120,7 @@ function setBackupStatus(message) {
 
 async function handleExport() {
   try {
-    const response = await fetch("/api/export");
+    const response = await fetch(`${API_ROOT}/export`);
     if (!response.ok) throw new Error(`Yedek alınamadı (HTTP ${response.status})`);
     const data = await response.json();
 

@@ -1,5 +1,9 @@
 // API + statik dosya sunucusu.
-// Tek origin'den servis ettiğimiz için CORS derdi yok.
+//
+// Geliştirmede arayüz ve API aynı origin'den gelir (CORS gerekmez).
+// Yayında arayüz GitHub Pages'te, API burada: farklı origin → CORS devrede.
+// İzinli origin listesi `ALLOWED_ORIGINS` ortam değişkeniyle genişletilir
+// (virgülle ayrılmış). Varsayılan: yerel geliştirme + projenin Pages adresi.
 
 import express from "express";
 import { randomUUID } from "node:crypto";
@@ -10,6 +14,20 @@ import { createDb } from "./db.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(here, "..");
+
+export const DEFAULT_ALLOWED_ORIGINS = [
+  "http://localhost:4173",
+  "http://127.0.0.1:4173",
+  "https://nezucodes.github.io",
+];
+
+export function parseAllowedOrigins(value) {
+  return String(value ?? "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+}
+
 
 function habitFromRow(row) {
   return {
@@ -42,9 +60,38 @@ function cleanNote(value) {
 
 // seed: testlerde kapalı. Normal çalışmada örnek veriyi istemci ekler,
 // böylece localStorage'dan taşınan gerçek veri varsa örnekler onunla karışmaz.
-export function createApp({ dbPath = join(here, "data", "ht.db"), seed = false } = {}) {
+export function createApp({
+  dbPath = join(here, "data", "ht.db"),
+  seed = false,
+  allowedOrigins = DEFAULT_ALLOWED_ORIGINS,
+} = {}) {
   const db = createDb(dbPath);
   const app = express();
+  const origins = new Set(allowedOrigins);
+
+  // CORS: tarayıcı, farklı origin'deki API'ye istek atmadan ÖNCE izin sorar
+  // (preflight). Basit GET'lerde ise yanıtta `Access-Control-Allow-Origin`
+  // başlığı arar; yoksa yanıtı JavaScript'e vermez.
+  //
+  // Not: izinli olmayan origin'e 403 döndürmüyoruz. Başlığı hiç koymuyoruz;
+  // kararı tarayıcı veriyor. Bu, CORS'un bir "sunucu güvenliği" değil
+  // "tarayıcı politikası" olduğunun en net kanıtı (curl her şeyi görebilir).
+  app.use((req, res, next) => {
+    const origin = req.get("origin");
+    if (!origin || !origins.has(origin)) return next();
+
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+
+    if (req.method === "OPTIONS") {
+      res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
+      res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+      res.setHeader("Access-Control-Max-Age", "86400");
+      return res.status(204).end();
+    }
+
+    next();
+  });
 
   app.use(express.json({ limit: "1mb" }));
 

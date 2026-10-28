@@ -22,10 +22,10 @@ after(async () => {
   app.locals.db.close();
 });
 
-async function api(path, { method = "GET", body } = {}) {
+async function api(path, { method = "GET", body, headers = {} } = {}) {
   const response = await fetch(`${base}${path}`, {
     method,
-    headers: body === undefined ? undefined : { "Content-Type": "application/json" },
+    headers: body === undefined ? headers : { "Content-Type": "application/json", ...headers },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   const text = await response.text();
@@ -33,6 +33,7 @@ async function api(path, { method = "GET", body } = {}) {
     status: response.status,
     body: text ? JSON.parse(text) : null,
     contentType: response.headers.get("content-type") ?? "",
+    headers: response.headers,
   };
 }
 
@@ -42,6 +43,49 @@ test("GET /api/health ayakta mı", async () => {
   const res = await api("/api/health");
   assert.equal(res.status, 200);
   assert.deepEqual(res.body, { ok: true });
+});
+
+/* ------------------------------ CORS ------------------------------ */
+// CORS bir sunucu güvenliği değil, tarayıcı politikasıdır: sunucu sadece
+// "bu origin'e izin veriyorum" başlığı ekler; kararı tarayıcı uygular.
+
+test("CORS: izinli origin'e Access-Control-Allow-Origin döner", async () => {
+  const res = await api("/api/health", {
+    headers: { Origin: "https://nezucodes.github.io" },
+  });
+  assert.equal(res.status, 200);
+  assert.equal(res.headers.get("access-control-allow-origin"), "https://nezucodes.github.io");
+  assert.match(res.headers.get("vary") ?? "", /Origin/i);
+});
+
+test("CORS: yerel geliştirme origin'i de izinli", async () => {
+  const res = await api("/api/health", {
+    headers: { Origin: "http://localhost:4173" },
+  });
+  assert.equal(res.headers.get("access-control-allow-origin"), "http://localhost:4173");
+});
+
+test("CORS: izinsiz origin'e başlık eklenmez (istek yine çalışır)", async () => {
+  const res = await api("/api/health", {
+    headers: { Origin: "https://kotu-site.example" },
+  });
+  assert.equal(res.status, 200);
+  assert.equal(res.headers.get("access-control-allow-origin"), null);
+});
+
+test("CORS: preflight (OPTIONS) 204 döner, metot ve başlıkları bildirir", async () => {
+  const res = await api("/api/habits", {
+    method: "OPTIONS",
+    headers: {
+      Origin: "https://nezucodes.github.io",
+      "Access-Control-Request-Method": "POST",
+      "Access-Control-Request-Headers": "content-type",
+    },
+  });
+  assert.equal(res.status, 204);
+  assert.equal(res.headers.get("access-control-allow-origin"), "https://nezucodes.github.io");
+  assert.match(res.headers.get("access-control-allow-methods") ?? "", /POST/);
+  assert.match(res.headers.get("access-control-allow-headers") ?? "", /Content-Type/i);
 });
 
 test("boş veritabanında state boş listeler döner", async () => {

@@ -8,7 +8,8 @@ export function registerServiceWorker() {
 
   window.addEventListener("load", () => {
     navigator.serviceWorker
-      .register("/sw.js", { updateViaCache: "none" })
+      // Göreli yol: GitHub Pages alt dizininde de doğru scope'u alır.
+      .register("sw.js", { updateViaCache: "none" })
       .catch((error) => console.warn("Service worker kaydedilemedi:", error));
   });
 
