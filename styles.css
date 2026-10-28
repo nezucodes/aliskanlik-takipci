@@ -32,9 +32,12 @@ body {
   min-height: 100dvh;
 }
 
-header,
-main,
-footer {
+/* Sadece sayfa seviyesindeki landmark'lar ortalanır.
+   `header` seçicisi kart içindeki başlıkları da etkiliyordu; bu yüzden
+   doğrudan gövde çocuklarına daralttık. */
+body > header,
+body > main,
+body > footer {
   max-width: 1100px;
   margin-inline: auto;
 }
@@ -235,6 +238,31 @@ h2 {
   background: color-mix(in srgb, var(--danger) 16%, transparent);
 }
 
+/* Analizler: alışkanlık panosundan sonra, ikincil odak. */
+.analytics {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.analytics__header {
+  display: grid;
+  gap: 0.15rem;
+  margin-top: 0.8rem;
+  padding-top: 1.4rem;
+  border-top: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+}
+
+.analytics__header h2 {
+  margin: 0;
+  font-size: clamp(1.05rem, 0.95rem + 0.4vw, 1.25rem);
+}
+
+.analytics__sub {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
 .insights {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -308,15 +336,42 @@ h2 {
   gap: 0.5rem;
 }
 
+/* Bardak metaforu: dolgu yüksekliği = o günün tamamlanma oranı.
+   `--fill` değeri app.js'te 0%–100% arasında hesaplanır. */
 .weekly__day {
-  display: grid;
-  justify-items: center;
-  gap: 0.4rem;
-  padding: 0.6rem 0.4rem;
-  border-radius: 12px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 7.5rem;
+  padding: 0.6rem 0.35rem 0.65rem;
+  border-radius: 14px;
   border: 1px solid var(--border);
-  background: var(--surface);
+  background: color-mix(in srgb, var(--surface) 85%, var(--bg));
+  overflow: hidden;
   text-align: center;
+}
+
+.weekly__fill {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 0;
+  height: var(--fill, 0%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 30%, #ffffff) 0%,
+    color-mix(in srgb, var(--accent) 55%, #ffffff) 100%
+  );
+  border-top: 2px solid color-mix(in srgb, var(--accent) 65%, #ffffff);
+  transition: height 320ms ease;
+}
+
+.weekly__label,
+.weekly__count {
+  position: relative;
+  z-index: 1;
 }
 
 .weekly__label {
@@ -327,7 +382,7 @@ h2 {
 }
 
 .weekly__count {
-  font-weight: 600;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
@@ -447,6 +502,7 @@ h2 {
 .board__header {
   display: grid;
   gap: 0.2rem;
+  text-align: center;
 }
 
 .board__sub {
@@ -917,6 +973,27 @@ h2 {
 
   .insights {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .weekly {
+    gap: 0.3rem;
+  }
+
+  .weekly__day {
+    min-height: 6.5rem;
+    padding: 0.5rem 0.15rem;
+    border-radius: 12px;
+  }
+
+  .weekly__label {
+    font-size: 0.7rem;
+    letter-spacing: 0.03em;
+  }
+
+  .weekly__count {
+    font-size: 0.85rem;
   }
 }
 

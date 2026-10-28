@@ -236,14 +236,23 @@ function renderWeekly() {
     }
     const day = document.createElement("div");
     day.className = "weekly__day";
+    const total = habits.length;
+    const ratio = total > 0 ? done / total : 0;
+    day.style.setProperty("--fill", `${Math.round(ratio * 100)}%`);
+    day.setAttribute("aria-label", `${formatTR(date)}: ${done}/${total} tamamlandı`);
+
+    const fill = document.createElement("span");
+    fill.className = "weekly__fill";
+    fill.setAttribute("aria-hidden", "true");
+
     const label = document.createElement("span");
     label.className = "weekly__label";
     const d = new Date(parseISO(date));
     label.textContent = d.toLocaleDateString("tr-TR", { weekday: "short" });
     const count = document.createElement("span");
     count.className = "weekly__count";
-    count.textContent = `${done}/${habits.length}`;
-    day.append(label, count);
+    count.textContent = `${done}/${total}`;
+    day.append(fill, label, count);
     weeklyStripEl.appendChild(day);
   }
 }

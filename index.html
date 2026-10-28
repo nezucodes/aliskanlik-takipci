@@ -44,60 +44,6 @@
     </div>
 
     <main class="app-main">
-      <section class="insights" aria-label="Özet istatistikler">
-        <article class="insight">
-          <p class="insight__label">Toplam</p>
-          <p class="insight__value" id="stat-total">0</p>
-          <p class="insight__sub">tamamlama</p>
-        </article>
-        <article class="insight">
-          <p class="insight__label">Aktif gün</p>
-          <p class="insight__value" id="stat-days">0</p>
-          <p class="insight__sub">en az bir işaret</p>
-        </article>
-        <article class="insight">
-          <p class="insight__label">En uzun seri</p>
-          <p class="insight__value" id="stat-best">0</p>
-          <p class="insight__sub">gün</p>
-        </article>
-        <article class="insight">
-          <p class="insight__label">Bu ay</p>
-          <p class="insight__value" id="stat-month">%0</p>
-          <p class="insight__sub" id="stat-month-sub">0/0</p>
-        </article>
-      </section>
-
-      <section class="stats" aria-label="İstatistikler">
-        <div class="stats__card">
-          <header class="stats__header">
-            <div>
-              <h2>Haftalık görünüm</h2>
-              <p class="stats__sub">Son 7 gün · tamamlanan / toplam</p>
-            </div>
-          </header>
-          <div class="weekly" id="weekly-strip" aria-label="Son 7 günlük özet"></div>
-        </div>
-        <div class="stats__card">
-          <header class="stats__header">
-            <div>
-              <h2>Isı haritası</h2>
-              <p class="stats__sub">Son 90 gün · ne kadar çok tamamladıysan o kadar koyu</p>
-            </div>
-            <div class="heatmap__legend" aria-label="Renk skalası">
-              <span>Az</span>
-              <span class="heatmap__swatch heatmap__swatch--0"></span>
-              <span class="heatmap__swatch heatmap__swatch--1"></span>
-              <span class="heatmap__swatch heatmap__swatch--2"></span>
-              <span class="heatmap__swatch heatmap__swatch--3"></span>
-              <span class="heatmap__swatch heatmap__swatch--4"></span>
-              <span>Çok</span>
-            </div>
-          </header>
-          <div class="heatmap" id="heatmap" aria-label="Son 90 günlük ısı haritası"></div>
-          <p class="heatmap__hint">Karelerin üstüne gelince (veya dokununca) tarihi görebilirsin.</p>
-        </div>
-      </section>
-
       <section class="board" aria-label="Alışkanlık panosu">
         <div class="board__column">
           <header class="board__header">
@@ -135,6 +81,67 @@
           />
           <button type="submit">Ekle</button>
         </form>
+      </section>
+
+      <section class="analytics" aria-label="Analizler">
+        <header class="analytics__header">
+          <h2>Analizler</h2>
+          <p class="analytics__sub">Geçmişine toplu bakış</p>
+        </header>
+
+        <div class="insights" aria-label="Özet istatistikler">
+          <article class="insight">
+            <p class="insight__label">Toplam</p>
+            <p class="insight__value" id="stat-total">0</p>
+            <p class="insight__sub">tamamlama</p>
+          </article>
+          <article class="insight">
+            <p class="insight__label">Aktif gün</p>
+            <p class="insight__value" id="stat-days">0</p>
+            <p class="insight__sub">en az bir işaret</p>
+          </article>
+          <article class="insight">
+            <p class="insight__label">En uzun seri</p>
+            <p class="insight__value" id="stat-best">0</p>
+            <p class="insight__sub">gün</p>
+          </article>
+          <article class="insight">
+            <p class="insight__label">Bu ay</p>
+            <p class="insight__value" id="stat-month">%0</p>
+            <p class="insight__sub" id="stat-month-sub">0/0</p>
+          </article>
+        </div>
+
+        <div class="stats" aria-label="İstatistikler">
+          <div class="stats__card">
+            <header class="stats__header">
+              <div>
+                <h2>Haftalık görünüm</h2>
+                <p class="stats__sub">Son 7 gün · ne kadar dolduysa o kadar dolu</p>
+              </div>
+            </header>
+            <div class="weekly" id="weekly-strip" aria-label="Son 7 günlük özet"></div>
+          </div>
+          <div class="stats__card">
+            <header class="stats__header">
+              <div>
+                <h2>Isı haritası</h2>
+                <p class="stats__sub">Son 90 gün · ne kadar çok tamamladıysan o kadar koyu</p>
+              </div>
+              <div class="heatmap__legend" aria-label="Renk skalası">
+                <span>Az</span>
+                <span class="heatmap__swatch heatmap__swatch--0"></span>
+                <span class="heatmap__swatch heatmap__swatch--1"></span>
+                <span class="heatmap__swatch heatmap__swatch--2"></span>
+                <span class="heatmap__swatch heatmap__swatch--3"></span>
+                <span class="heatmap__swatch heatmap__swatch--4"></span>
+                <span>Çok</span>
+              </div>
+            </header>
+            <div class="heatmap" id="heatmap" aria-label="Son 90 günlük ısı haritası"></div>
+            <p class="heatmap__hint">Karelerin üstüne gelince (veya dokununca) tarihi görebilirsin.</p>
+          </div>
+        </div>
       </section>
 
       <section class="archive" id="archive-section" hidden aria-label="Arşiv">
