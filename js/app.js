@@ -5,7 +5,7 @@
 
 import { addDays, formatTR, getActiveToday, isDebugToday, isISODate, parseISO, todayISO } from "./date.js";
 import { completionRate, computeStreak, longestStreak } from "./streak.js";
-import { buildSummary } from "./stats.js";
+import { buildSummary, isHabitActiveOn, rateWindow } from "./stats.js";
 import { applyTheme, getPreference, initTheme } from "./theme.js";
 import { registerServiceWorker } from "./pwa.js";
 import { API_ROOT } from "./config.js";
@@ -30,7 +30,6 @@ const summaryEl = document.querySelector("#summary");
 const pageTitleEl = document.querySelector("#page-title");
 const datePickerEl = document.querySelector("#date-picker");
 const backTodayEl = document.querySelector("#back-today");
-const viewHintEl = document.querySelector("#view-hint");
 const emojiPickerEl = document.querySelector("#emoji-picker");
 const debugPanelEl = document.querySelector("#debug-panel");
 const debugDateEl = document.querySelector("#debug-date");
@@ -278,9 +277,6 @@ function setViewDate(date) {
   if (pageTitleEl) {
     pageTitleEl.textContent = isToday ? "Bugün ne yaptın?" : "Geçmişe bak";
   }
-  if (viewHintEl) {
-    viewHintEl.textContent = isToday ? "" : `${formatTR(viewDate)} tarihine bakıyorsun.`;
-  }
   render();
 }
 
@@ -340,20 +336,28 @@ function renderWeekly() {
   if (!weeklyStripEl) return;
   weeklyStripEl.replaceChildren();
   const base = getActiveToday();
-  const habits = store.listHabits();
+  // Arşivdekiler de geçmiş günlerde vardı → paydaya girmeli.
+  const allHabits = [...store.listHabits(), ...store.listArchivedHabits()];
 
   for (let i = 6; i >= 0; i -= 1) {
     const date = addDays(base, -i);
+    // O gün var olan alışkanlıklar (yeni eklenen geçmişi geriye dönük değiştirmez).
+    const active = habitsOnDate(allHabits, date);
     let done = 0;
-    for (const habit of habits) {
+    for (const habit of active) {
       if (store.isDone(habit.id, date)) done += 1;
     }
     const day = document.createElement("div");
     day.className = "weekly__day";
-    const total = habits.length;
+    const total = active.length;
     const ratio = total > 0 ? done / total : 0;
     day.style.setProperty("--fill", `${Math.round(ratio * 100)}%`);
-    day.setAttribute("aria-label", `${formatTR(date)}: ${done}/${total} tamamlandı`);
+    day.setAttribute(
+      "aria-label",
+      total === 0
+        ? `${formatTR(date)}: henüz alışkanlık yok`
+        : `${formatTR(date)}: ${done}/${total} tamamlandı`,
+    );
 
     const fill = document.createElement("span");
     fill.className = "weekly__fill";
@@ -365,7 +369,7 @@ function renderWeekly() {
     label.textContent = d.toLocaleDateString("tr-TR", { weekday: "short" });
     const count = document.createElement("span");
     count.className = "weekly__count";
-    count.textContent = `${done}/${total}`;
+    count.textContent = total === 0 ? "—" : `${done}/${total}`;
     day.append(fill, label, count);
     weeklyStripEl.appendChild(day);
   }
@@ -375,20 +379,24 @@ function renderHeatmap() {
   if (!heatmapEl) return;
   heatmapEl.replaceChildren();
   const base = getActiveToday();
-  const habits = store.listHabits();
+  // Arşivlenmişler geçmiş günlerde hâlâ "beklenen" alışkanlıklardı.
+  const allHabits = [...store.listHabits(), ...store.listArchivedHabits()];
   const days = 91;
   const cells = [];
 
   for (let i = days - 1; i >= 0; i -= 1) {
     const date = addDays(base, -i);
+    // Payda o gün var olan alışkanlıklar: yeni eklenen geçmişi geriye dönük
+    // "yapılmadı"ya çevirmez, arşivlenen de sonrasında beklenmez.
+    const active = habitsOnDate(allHabits, date);
     let done = 0;
-    for (const habit of habits) {
+    for (const habit of active) {
       if (store.isDone(habit.id, date)) done += 1;
     }
+    const total = active.length;
     let level = 0;
-    if (habits.length === 0) level = 0;
-    else {
-      const ratio = done / habits.length;
+    if (total > 0) {
+      const ratio = done / total;
       if (ratio === 0) level = 0;
       else if (ratio < 0.25) level = 1;
       else if (ratio < 0.5) level = 2;
@@ -398,7 +406,10 @@ function renderHeatmap() {
     const cell = document.createElement("div");
     cell.className = "heatmap__cell";
     cell.dataset.level = String(level);
-    cell.dataset.tooltip = `${formatTR(date)} · ${done}/${habits.length} tamamlandı`;
+    cell.dataset.tooltip =
+      total === 0
+        ? `${formatTR(date)} · henüz alışkanlık yok`
+        : `${formatTR(date)} · ${done}/${total} tamamlandı`;
     cells.push(cell);
   }
   for (const cell of cells) {
@@ -407,7 +418,8 @@ function renderHeatmap() {
 }
 
 function renderInsights() {
-  const habits = store.listHabits();
+  // Arşivlenmişler de geçmiş günlerin paydasına girer: o günlerde vardılar.
+  const habits = [...store.listHabits(), ...store.listArchivedHabits()];
   const summary = buildSummary(habits, store.listEntries(), getActiveToday());
 
   if (statTotalEl) statTotalEl.textContent = String(summary.total);
@@ -505,13 +517,29 @@ function renderEditForm(habit) {
   return form;
 }
 
+/**
+ * Bir günde sayılacak alışkanlıklar.
+ *
+ * Kural: o gün var olanlar (createdAt ≤ gün ≤ archivedAt) + o güne sonradan
+ * işaret konmuş olanlar. İkincisi, "geçmişe bak" ile geriye dönük işaretlemeyi
+ * analizlerden düşürmemek için: o gün gerçekten yapılmış bir şey var.
+ * Pano, haftalık şerit ve ısı haritası aynı kümeyi kullanır → çelişki olmaz.
+ */
+function habitsOnDate(habits, date) {
+  return habits.filter((habit) => isHabitActiveOn(habit, date) || store.isDone(habit.id, date));
+}
+
 function render() {
-  todayLabelEl.textContent = formatTR(getActiveToday());
+  // Başlıkta her zaman BUGÜN değil, baktığın gün yazmalı.
+  todayLabelEl.textContent = formatTR(viewDate);
   if (debugDateEl && !debugDateEl.value && isDebugToday()) {
     debugDateEl.value = getActiveToday();
   }
 
-  const habits = store.listHabits();
+  // Geçmiş bir güne bakarken o gün henüz eklenmemiş alışkanlıklar panoda
+  // görünmemeli; yoksa özet "2/9" derken analizler "2/4" der ve çelişir.
+  // İstisna: o güne sonradan işaret konmuşsa kart görünür (geri alınabilir).
+  const habits = habitsOnDate(store.listHabits(), viewDate);
   pendingListEl.replaceChildren();
   doneListEl.replaceChildren();
 
@@ -532,10 +560,16 @@ function render() {
   }
 
   pendingEmptyEl.hidden = pendingCount > 0;
-  doneEmptyEl.hidden = doneCount > 0;
+  // Hiç alışkanlık yokken iki sütunda iki farklı boş mesaj göstermek kafa karıştırır.
+  doneEmptyEl.hidden = doneCount > 0 || habits.length === 0;
 
   // Yükleme başarısızsa "her şey tamam" yanılsaması yerine gerçeği söyle.
-  const emptyText = loadFailed ? "Veriler yüklenemedi." : null;
+  // Hiç alışkanlık yoksa da "tümü tamamlandı" demek yanlış olurdu.
+  const emptyText = loadFailed
+    ? "Veriler yüklenemedi."
+    : habits.length === 0
+      ? "Bu tarihte henüz alışkanlık yok."
+      : null;
   pendingEmptyEl.textContent = emptyText ?? pendingEmptyText;
   doneEmptyEl.textContent = emptyText ?? doneEmptyText;
 
@@ -579,7 +613,8 @@ function renderHabit(habit, dates, done) {
   meta.className = "habit-meta";
   const streak = computeStreak(dates, getActiveToday());
   const best = longestStreak(dates);
-  const rate = Math.round(completionRate(dates, addDays(getActiveToday(), -29), getActiveToday()) * 100);
+  const { from: rateFrom, to: rateTo } = rateWindow(habit, dates, getActiveToday());
+  const rate = Math.round(completionRate(dates, rateFrom, rateTo) * 100);
   meta.textContent = `🔥 ${streak} gün · en iyi ${best} · son 30 gün %${rate}`;
 
   const entry = store.getEntry(habit.id, viewDate);

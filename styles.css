@@ -82,6 +82,43 @@ body > footer {
   gap: 1rem;
 }
 
+.site-head__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.site-head__meta .eyebrow {
+  margin: 0;
+}
+
+/* "Bugüne dön": geçmişe bakarken başlığın yanında görünür.
+   Menünün içinde kaybolmasın diye başlık alanına taşındı. */
+.view-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  color: var(--text);
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.view-back[hidden] {
+  display: none;
+}
+
+.view-back:hover,
+.view-back:focus-visible {
+  background: color-mix(in srgb, var(--accent) 26%, var(--surface));
+}
+
 .eyebrow {
   margin: 0 0 0.25rem;
   font-size: 0.8125rem;
@@ -255,12 +292,6 @@ h2 {
 .ghost-btn:hover,
 .ghost-btn:focus-visible {
   color: var(--text);
-}
-
-.view-hint {
-  margin: 0;
-  font-size: 0.875rem;
-  color: var(--muted);
 }
 
 .app-main {
@@ -529,6 +560,21 @@ h2 {
   white-space: nowrap;
   pointer-events: none;
   z-index: 2;
+}
+
+/* Kenar sütunlarında ipucu ekranın dışına taşmasın: ortalamak yerine
+   hücrenin kenarına hizala. Izgara 13 sütun olduğu için nth-child(13n+…) kullanılır. */
+.heatmap__cell:nth-child(13n + 1)::after,
+.heatmap__cell:nth-child(13n + 2)::after {
+  left: 0;
+  transform: none;
+}
+
+.heatmap__cell:nth-child(13n + 12)::after,
+.heatmap__cell:nth-child(13n)::after {
+  left: auto;
+  right: 0;
+  transform: none;
 }
 
 .heatmap__legend {
