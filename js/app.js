@@ -11,6 +11,11 @@ import { registerServiceWorker } from "./pwa.js";
 import { API_ROOT } from "./config.js";
 import * as store from "./apiStore.js";
 
+// Açılış nöbetçisi: index.html'deki küçük script bu işareti görürse
+// "uygulama çalışıyor" der. Modül hiç yüklenemezse (ör. önbellekte eski
+// stats.js + yeni app.js) işaret konmaz ve kullanıcıya "Yenile" bandı çıkar.
+document.documentElement.dataset.appBoot = "1";
+
 const pendingListEl = document.querySelector("#pending-list");
 const doneListEl = document.querySelector("#done-list");
 const pendingEmptyEl = document.querySelector("#pending-empty");
@@ -787,7 +792,13 @@ async function start() {
 
   viewDate = getActiveToday();
   if (datePickerEl) datePickerEl.value = viewDate;
-  setViewDate(viewDate);
+  try {
+    setViewDate(viewDate);
+  } catch (error) {
+    // Çizim patlarsa boş ekran bırakma: kullanıcı ne olduğunu görsün.
+    console.error(error);
+    showError(new Error("Arayüz çizilemedi. Sayfayı yenilemeyi dene."));
+  }
 }
 
 void start();

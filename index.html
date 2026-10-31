@@ -34,6 +34,11 @@
     </script>
   </head>
   <body>
+    <div class="app-error app-error--boot" id="boot-error" role="alert" hidden>
+      <p class="app-error__text" id="boot-error-text"></p>
+      <button class="app-error__retry" id="boot-error-retry" type="button">Yenile</button>
+    </div>
+
     <header class="site-head">
       <div class="site-head__top">
         <div>
@@ -222,5 +227,85 @@
     </footer>
 
     <script type="module" src="js/app.js"></script>
+    <script>
+      // Açılış nöbetçisi (klasik script: modüller çökse bile çalışır).
+      //
+      // Neden var: service worker + tarayıcı HTTP önbelleği karışınca yeni
+      // app.js eski stats.js ile eşleşebiliyor; modül hiç çalışmıyor ve ekran
+      // sessizce boş kalıyor. Burada "modül çalıştı mı?" diye bakıp, çalışmadıysa
+      // önbelleği temizleyip sayfayı tazeleyen bir "Yenile" bandı gösteriyoruz.
+      (function () {
+        var bar = document.getElementById("boot-error");
+        var text = document.getElementById("boot-error-text");
+        var retry = document.getElementById("boot-error-retry");
+        if (!bar || !text || !retry) return;
+
+        // "Yeni sürüm hazır" kalıcıdır; "yüklenemedi" ise ağ yavaşsa
+        // modül birazdan gelince kendiliğinden kaybolur.
+        var sticky = false;
+        var poll = null;
+
+        function booted() {
+          return document.documentElement.dataset.appBoot === "1";
+        }
+
+        function show(message, options) {
+          if (options && options.sticky) sticky = true;
+          text.textContent = message;
+          bar.hidden = false;
+        }
+
+        function hideWhenBooted() {
+          if (poll) return;
+          poll = setInterval(function () {
+            if (!booted()) return;
+            clearInterval(poll);
+            poll = null;
+            if (!sticky) bar.hidden = true;
+          }, 1000);
+        }
+
+        function recover() {
+          var jobs = [];
+          if (window.caches) {
+            jobs.push(
+              caches.keys().then(function (keys) {
+                return Promise.all(keys.map(function (key) { return caches.delete(key); }));
+              }),
+            );
+          }
+          if (navigator.serviceWorker) {
+            jobs.push(
+              navigator.serviceWorker.getRegistrations().then(function (regs) {
+                return Promise.all(regs.map(function (reg) { return reg.unregister(); }));
+              }),
+            );
+          }
+          Promise.all(jobs).catch(function () {}).then(function () {
+            // ?v= : tarayıcının HTTP önbelleğini de atla.
+            location.replace(location.pathname + "?v=" + Date.now());
+          });
+        }
+
+        retry.addEventListener("click", recover);
+
+        // Yeni service worker devraldığında (pwa.js gönderir).
+        window.addEventListener("ht:update-ready", function () {
+          show("Yeni sürüm hazır. Güncellemek için Yenile'ye dokun.", { sticky: true });
+        });
+
+        window.addEventListener("error", function () {
+          if (booted()) return;
+          show("Uygulama yüklenemedi. Yenile'ye dokun.");
+          hideWhenBooted();
+        });
+
+        setTimeout(function () {
+          if (booted()) return;
+          show("Uygulama yüklenemedi. Yenile'ye dokun.");
+          hideWhenBooted();
+        }, 6000);
+      })();
+    </script>
   </body>
 </html>

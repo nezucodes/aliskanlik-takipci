@@ -300,8 +300,7 @@ h2 {
   gap: 1.2rem;
 }
 
-/* Hata bildirimi: sunucu kapalıysa sessizce boş ekran göstermeyelim. */
-.app-error {
+/* Hata bildirimi: sunucu kapalıysa sessizce boş ekran göstermeyelim. */.app-error {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -316,6 +315,12 @@ h2 {
 
 .app-error[hidden] {
   display: none;
+}
+
+/* Açılış nöbetçisi bandı: başlığın üstünde durur. */
+.app-error--boot {
+  margin-top: 0;
+  margin-bottom: 1rem;
 }
 
 .app-error__text {

@@ -5,6 +5,12 @@
 //   - Çevrimiçiyken her zaman taze dosya gelir (geliştirirken bayat kod görmezsin).
 //   - Çevrimdışıyken son başarılı sürüm önbellekten servis edilir.
 //
+// ÖNEMLİ: istekler `cache: "no-store"` ile yapılır. GitHub Pages dosyaları
+// `Cache-Control: max-age=600` ile servis ediyor; bu başlık yüzünden "ağdan
+// taze al" isteği aslında tarayıcının HTTP önbelleğinden dönebiliyor. O zaman
+// yeni `app.js` ile eski `stats.js` yan yana geliyor ve modül import'u patlıyor
+// (ekran bomboş kalır, hata bandı bile çizilmez). no-store bu karışımı önler.
+//
 // API istekleri ASLA önbelleklenmez: kullanıcı verisi bayat olmamalı.
 // Yayında API başka bir origin'de olduğu için ilk kontrol zaten onları eler.
 //
@@ -12,7 +18,7 @@
 // çalıştığı için "/index.html" gibi kök yollar yanlış yere işaret eder.
 // Göreli yollar service worker'ın kendi konumuna göre çözülür.
 
-const VERSION = "v4";
+const VERSION = "v5";
 const CACHE = `ht-shell-${VERSION}`;
 
 const PRECACHE = [
@@ -39,7 +45,11 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(CACHE)
-      .then((cache) => cache.addAll(PRECACHE))
+      // cache: "reload" → kurulum da HTTP önbelleğini atlar; önbelleğe
+      // gerçekten yeni sürümün dosyaları yazılır.
+      .then((cache) =>
+        cache.addAll(PRECACHE.map((url) => new Request(url, { cache: "reload" }))),
+      )
       // Yeni sürüm hemen devralsın (geliştirme kolaylığı).
       .then(() => self.skipWaiting()),
   );
@@ -63,7 +73,8 @@ self.addEventListener("fetch", (event) => {
   if (url.pathname.startsWith("/api/")) return; // yerel API de asla önbelleğe girmez
 
   event.respondWith(
-    fetch(request)
+    // no-store: tarayıcının HTTP önbelleğini atla, gerçekten ağa çık.
+    fetch(request, { cache: "no-store" })
       .then((response) => {
         if (response.ok) {
           const copy = response.clone();
